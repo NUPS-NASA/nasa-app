@@ -9,6 +9,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       PNPM_HOME: /home/node/.local/share/pnpm
       PNPM_STORE_PATH: /workspace/.pnpm-store
+      DATABASE_URL: file:./dev.db
     volumes:
       - .:/workspace
       - pnpm-store:/workspace/.pnpm-store

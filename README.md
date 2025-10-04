@@ -9,6 +9,7 @@
 - ESM 기반 Express 5 서버에 CORS, JSON 파싱, 환경 변수 로딩이 기본 탑재됩니다.
 - `packages/` 디렉터리의 hooks, stores, types, ui, utils 패키지로 공용 로직을 모듈화할 수 있습니다.
 - Docker Compose를 이용해 서버·클라이언트를 동시에 개발 모드로 띄우는 구성이 준비되어 있습니다.
+- Prisma + SQLite 기반의 가벼운 데이터 계층이 포함되어 있으며, 기본 DB 파일은 `apps/server/prisma/dev.db`로 생성됩니다.
 
 ## 기술 스택
 - Node.js 20.x (Docker 베이스 이미지: `node:20.19.4-slim`)
@@ -55,6 +56,7 @@ pnpm install
 ## 환경 변수
 - API 서버 (`apps/server/.env`)
   - `PORT`: 서버 포트 (기본값 4000)
+  - `DATABASE_URL`: Prisma가 참조할 SQLite 파일 경로 (기본값 `file:./dev.db`)
 - 프론트엔드 (`apps/client` 루트에 `.env` 생성 가능)
   - `BACKEND_URL`: 개발 서버에서 `/api` 프록시가 향할 API 주소. 지정하지 않으면 `http://localhost:4000` 사용
   - Docker 개발 환경에서는 `VITE_API_BASE_URL`을 이용해 API 엔드포인트를 주입합니다.

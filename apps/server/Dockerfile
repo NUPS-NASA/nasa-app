@@ -5,6 +5,10 @@ ENV PNPM_HOME=/home/node/.local/share/pnpm \
     PATH="${PNPM_HOME}:${PATH}" \
     NODE_ENV=development
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN corepack enable pnpm
 
 WORKDIR /workspace

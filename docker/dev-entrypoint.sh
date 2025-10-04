@@ -19,4 +19,7 @@ fi
 echo "Installing workspace dependencies with pnpm..."
 pnpm install --frozen-lockfile
 
+echo "Generating Prisma client..."
+pnpm --filter @nups-nasa/server exec prisma generate
+
 exec "$@"
