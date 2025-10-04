@@ -19,9 +19,10 @@ export default defineConfig(({ mode }) => {
         usePolling: true,
         interval: 100,
       },
+      allowedHosts: ['unperceptional-ruben-snubbingly.ngrok-free.dev'],
       proxy: {
         '/api': {
-          target: env.BACKEND_URL || 'http://localhost:4000',
+          target: env.BACKEND_URL || 'http://localhost:8000',
           changeOrigin: true,
         },
       },
