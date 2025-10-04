@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import Button from '../../../shared/ui/Button';
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -149,13 +150,9 @@ const Signup: React.FC = () => {
           {error && <p className="text-body12 mb-3 text-red-300">{error}</p>}
 
           <div className="flex w-full items-center justify-center">
-            <button
-              type="submit"
-              disabled={!agreeToTerms || isSubmitting}
-              className="text-title14 flex h-[35px] w-[159px] items-center justify-center bg-white text-black disabled:cursor-not-allowed disabled:bg-white/60"
-            >
+            <Button type="submit" variant="login" disabled={!agreeToTerms || isSubmitting}>
               {isSubmitting ? 'Signing up...' : 'Sign Up'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

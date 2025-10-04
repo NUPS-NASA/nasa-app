@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import Button from '../../../shared/ui/Button';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(false);
 
   const { login, user, isReady } = useAuth();
   const navigate = useNavigate();
@@ -29,7 +31,7 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(email, password, true);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
@@ -83,7 +85,7 @@ const Login: React.FC = () => {
             autoComplete="current-password"
           />
 
-          <div className="text-body12 mb-[24px] flex justify-between">
+          <div className="text-body12 mb-[5px] flex justify-between">
             <a href="#" className="underline">
               Forgot your Email or Password?
             </a>
@@ -94,17 +96,36 @@ const Login: React.FC = () => {
               </a>
             </div>
           </div>
+          <div className="flex items-center justify-end text-body12 mb-[53px]">
+            <input
+              type="checkbox"
+              checked={autoLogin}
+              id="autoLogin"
+              onChange={e => setAutoLogin(e.target.checked)}
+              className="w-[11px] h-[11px] mr-[7px] 
+                      cursor-pointer
+                      appearance-none 
+                      bg-[#D9D9D9]/20 
+                      checked:bg-[#4F46E5]
+                      checked:before:content-['✔']
+                      checked:before:block 
+                      checked:before:text-[8px] 
+                      checked:before:text-white 
+                      checked:before:leading-[11px] 
+                      checked:before:text-center
+                    "
+            />
+            <label htmlFor="autoLogin" className="cursor-pointer">
+              <span>Automatic Login</span>
+            </label>
+          </div>
 
-          {error && <p className="text-body12 mb-3 text-red-300">{error}</p>}
+          {error && <p className="text-body12 text-red-300">{error}</p>}
 
           <div className="flex w-full items-center justify-center">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="text-title14 flex h-[35px] w-[159px] items-center justify-center bg-white text-black disabled:cursor-not-allowed disabled:bg-white/60"
-            >
+            <Button variant="login" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Logging in...' : 'Log In'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

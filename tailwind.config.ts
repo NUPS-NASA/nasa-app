@@ -13,6 +13,9 @@ const config: Config = {
         gray: {
           DEFAULT: '#6A6A6A',
         },
+        main: {
+          bg: '#F9F9F9',
+        },
       },
       fontFamily: {
         sans: ['Pretendard', 'sans-serif'],

@@ -5,7 +5,7 @@ import type {
   UserUpdate,
   UserProfileRead,
   UserProfileUpdate,
-} from './schemas';
+} from '../types/index';
 
 export const listUsers = () => apiClient.request<UserRead[]>('/users');
 

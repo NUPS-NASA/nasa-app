@@ -2,9 +2,9 @@ import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
 import ProtectedRoute from './features/auth/ProtectedRoute';
-import Main from './features/main/Main';
 import Login from './features/main/auth/Login';
 import Signup from './features/main/auth/Signup';
+import UserProfileMain from './features/main/user/profile/UserProfileMain';
 
 const App: React.FC = () => {
   return (
@@ -18,7 +18,7 @@ const App: React.FC = () => {
               path="/*"
               element={
                 <ProtectedRoute>
-                  <Main />
+                  <UserProfileMain />
                 </ProtectedRoute>
               }
             />

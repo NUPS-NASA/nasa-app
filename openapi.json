@@ -1,1 +1,2803 @@
-{"openapi":"3.1.0","info":{"title":"nups-api","description":"Async FastAPI service that manages users, extended profile data, and follow relationships.","contact":{"name":"nups-api maintainers","url":"https://github.com/tgim4253/nups-api"},"version":"1.0.0"},"paths":{"/":{"get":{"tags":["health"],"summary":"Service health check","description":"Expose basic runtime metadata for uptime monitoring.","operationId":"read_root__get","responses":{"200":{"description":"Current service health details.","content":{"application/json":{"schema":{"additionalProperties":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"object","title":"Response Read Root  Get"}}}}}}},"/users":{"get":{"tags":["users"],"summary":"List users","description":"Return every registered user with eager-loaded profile data.","operationId":"list_users_users_get","responses":{"200":{"description":"All users ordered by identifier.","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/UserRead"},"type":"array","title":"Response List Users Users Get"}}}}}},"post":{"tags":["users"],"summary":"Create a user","description":"Persist a new user with optional profile data.","operationId":"create_user_users_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserCreate"}}},"required":true},"responses":{"201":{"description":"The newly created user including profile data, when present.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserRead"}}}},"409":{"description":"Email already exists."},"422":{"description":"Validation error when the payload is malformed."}}}},"/users/{user_id}":{"get":{"tags":["users"],"summary":"Retrieve a user","description":"Retrieve a user by identifier.","operationId":"get_user_users__user_id__get","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"responses":{"200":{"description":"The user resource with profile data when available.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserRead"}}}},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"put":{"tags":["users"],"summary":"Replace a user's attributes","description":"Update core user fields and optionally their profile.","operationId":"update_user_users__user_id__put","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserUpdate"}}}},"responses":{"200":{"description":"The updated user resource.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserRead"}}}},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["users"],"summary":"Delete a user","description":"Remove a user and their profile.","operationId":"delete_user_users__user_id__delete","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"responses":{"204":{"description":"Successful Response"},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/{user_id}/profile":{"get":{"tags":["users"],"summary":"Retrieve a user's profile","description":"Return a user's profile, ensuring both user and profile exist.","operationId":"get_user_profile_users__user_id__profile_get","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"responses":{"200":{"description":"The profile resource for the requested user.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileRead"}}}},"404":{"description":"User or profile missing."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"put":{"tags":["users"],"summary":"Upsert a user's profile","description":"Create or update a user's profile and return the current representation.","operationId":"update_user_profile_users__user_id__profile_put","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileUpdate"}}}},"responses":{"200":{"description":"The updated profile resource.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileRead"}}}},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/{user_id}/following":{"post":{"tags":["users"],"summary":"Follow another user","description":"Create a follow relationship where the path user follows another user.","operationId":"follow_user_users__user_id__following_post","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/FollowCreate"}}}},"responses":{"201":{"description":"The follow relationship that was created.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/FollowRead"}}}},"400":{"description":"Users cannot follow themselves."},"404":{"description":"User or target user not found."},"409":{"description":"Follow relationship already exists."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"get":{"tags":["users"],"summary":"List following","description":"Return users that the specified account is following.","operationId":"list_following_users__user_id__following_get","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"responses":{"200":{"description":"Users that the requested account is following.","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserRead"},"title":"Response List Following Users  User Id  Following Get"}}}},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/{user_id}/following/{following_id}":{"delete":{"tags":["users"],"summary":"Unfollow a user","description":"Delete the follow relationship between two users.","operationId":"unfollow_user_users__user_id__following__following_id__delete","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}},{"name":"following_id","in":"path","required":true,"schema":{"type":"integer","title":"Following Id"}}],"responses":{"204":{"description":"Successful Response"},"404":{"description":"Follow relationship not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/{user_id}/followers":{"post":{"tags":["users"],"summary":"Add a follower","description":"Create a follow relationship where another user follows the path user.","operationId":"add_follower_users__user_id__followers_post","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/FollowerCreate"}}}},"responses":{"201":{"description":"The follow relationship that was created.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/FollowRead"}}}},"400":{"description":"Users cannot follow themselves."},"404":{"description":"User or follower not found."},"409":{"description":"Follow relationship already exists."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"get":{"tags":["users"],"summary":"List followers","description":"Return users that follow the specified account.","operationId":"list_followers_users__user_id__followers_get","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"responses":{"200":{"description":"Users that follow the requested account.","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/UserRead"},"title":"Response List Followers Users  User Id  Followers Get"}}}},"404":{"description":"User not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/users/{user_id}/followers/{follower_id}":{"delete":{"tags":["users"],"summary":"Remove a follower","description":"Delete the follow relationship where the path user is followed by another user.","operationId":"remove_follower_users__user_id__followers__follower_id__delete","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}},{"name":"follower_id","in":"path","required":true,"schema":{"type":"integer","title":"Follower Id"}}],"responses":{"204":{"description":"Successful Response"},"404":{"description":"Follow relationship not found."},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}}},"components":{"schemas":{"FollowCreate":{"properties":{"following_id":{"type":"integer","title":"Following Id"}},"additionalProperties":false,"type":"object","required":["following_id"],"title":"FollowCreate","description":"Request payload for following another user."},"FollowRead":{"properties":{"follower_id":{"type":"integer","title":"Follower Id"},"following_id":{"type":"integer","title":"Following Id"},"created_at":{"type":"string","format":"date-time","title":"Created At"}},"type":"object","required":["follower_id","following_id","created_at"],"title":"FollowRead"},"FollowerCreate":{"properties":{"follower_id":{"type":"integer","title":"Follower Id"}},"additionalProperties":false,"type":"object","required":["follower_id"],"title":"FollowerCreate","description":"Request payload for adding a follower to a user."},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"UserCreate":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"password_hash":{"type":"string","title":"Password Hash"},"profile":{"anyOf":[{"$ref":"#/components/schemas/UserProfileCreate"},{"type":"null"}]}},"type":"object","required":["email","password_hash"],"title":"UserCreate"},"UserProfileCreate":{"properties":{"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"bio":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Bio"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"}},"type":"object","title":"UserProfileCreate"},"UserProfileRead":{"properties":{"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"bio":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Bio"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"},"user_id":{"type":"integer","title":"User Id"}},"type":"object","required":["user_id"],"title":"UserProfileRead"},"UserProfileUpdate":{"properties":{"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"bio":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Bio"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"}},"additionalProperties":false,"type":"object","title":"UserProfileUpdate","description":"Fields that can be patched on an existing profile."},"UserRead":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"id":{"type":"integer","title":"Id"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"updated_at":{"type":"string","format":"date-time","title":"Updated At"},"profile":{"anyOf":[{"$ref":"#/components/schemas/UserProfileRead"},{"type":"null"}]}},"type":"object","required":["email","id","created_at","updated_at"],"title":"UserRead"},"UserUpdate":{"properties":{"email":{"anyOf":[{"type":"string","format":"email"},{"type":"null"}],"title":"Email"},"password_hash":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Password Hash"},"profile":{"anyOf":[{"$ref":"#/components/schemas/UserProfileUpdate"},{"type":"null"}]}},"additionalProperties":false,"type":"object","title":"UserUpdate"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}}},"tags":[{"name":"health","description":"Liveness and readiness probes for infrastructure monitoring."},{"name":"users","description":"CRUD operations for user accounts, profile records, and follow relationships."}]}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "nups-api",
+    "description": "FastAPI service for the nups platform delivering user management, collaborative projects, uploads, and processing telemetry.\n\n## Domain highlights\n- **Users & profiles** — manage accounts, social graphs, and profile metadata.\n- **Repositories & datasets** — organise uploads, dataset versions, and per-item assets.\n- **Projects & pins** — coordinate contributors, link uploads, and curate pinned work.\n- **Sessions & candidates** — inspect processing runs, pipeline steps, and review detection outcomes.\n\n## Operational notes\n- Every route is mounted beneath the `/api` prefix.\n- Write endpoints persist changes immediately via SQLAlchemy + async sessions.\n- Authentication is omitted in this sample service; integrate your preferred provider before production use.",
+    "termsOfService": "https://github.com/tgim4253/nups-api#readme",
+    "contact": { "name": "nups-api maintainers", "url": "https://github.com/tgim4253/nups-api" },
+    "license": { "name": "MIT License", "url": "https://opensource.org/licenses/MIT" },
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:8000", "description": "Local development" }],
+  "paths": {
+    "/api/": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Service health check",
+        "description": "Expose basic runtime metadata for uptime monitoring.",
+        "operationId": "read_root_api__get",
+        "responses": {
+          "200": {
+            "description": "Current service health details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [{ "type": "string" }, { "type": "integer" }]
+                  },
+                  "type": "object",
+                  "title": "Response Read Root Api  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["users"],
+        "summary": "List users",
+        "description": "Return every registered user with eager-loaded profile data.",
+        "operationId": "list_users_api_users_get",
+        "responses": {
+          "200": {
+            "description": "All users ordered by identifier.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/UserRead" },
+                  "type": "array",
+                  "title": "Response List Users Api Users Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["users"],
+        "summary": "Create a user",
+        "description": "Persist a new user with optional profile data.",
+        "operationId": "create_user_api_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UserCreate" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created user including profile data, when present.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserRead" } }
+            }
+          },
+          "409": { "description": "Email already exists." },
+          "422": { "description": "Validation error when the payload is malformed." }
+        }
+      }
+    },
+    "/api/users/{user_id}": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Retrieve a user",
+        "description": "Retrieve a user by identifier.",
+        "operationId": "get_user_api_users__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user resource with profile data when available.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserRead" } }
+            }
+          },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["users"],
+        "summary": "Replace a user's attributes",
+        "description": "Update core user fields and optionally their profile.",
+        "operationId": "update_user_api_users__user_id__put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UserUpdate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated user resource.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserRead" } }
+            }
+          },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["users"],
+        "summary": "Delete a user",
+        "description": "Remove a user and their profile.",
+        "operationId": "delete_user_api_users__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/profile": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Retrieve a user's profile",
+        "description": "Return a user's profile, ensuring both user and profile exist.",
+        "operationId": "get_user_profile_api_users__user_id__profile_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile resource for the requested user.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserProfileRead" } }
+            }
+          },
+          "404": { "description": "User or profile missing." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["users"],
+        "summary": "Upsert a user's profile",
+        "description": "Create or update a user's profile and return the current representation.",
+        "operationId": "update_user_profile_api_users__user_id__profile_put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UserProfileUpdate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated profile resource.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserProfileRead" } }
+            }
+          },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/following": {
+      "post": {
+        "tags": ["users"],
+        "summary": "Follow another user",
+        "description": "Create a follow relationship where the path user follows another user.",
+        "operationId": "follow_user_api_users__user_id__following_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FollowCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The follow relationship that was created.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FollowRead" } }
+            }
+          },
+          "400": { "description": "Users cannot follow themselves." },
+          "404": { "description": "User or target user not found." },
+          "409": { "description": "Follow relationship already exists." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["users"],
+        "summary": "List following",
+        "description": "Return users that the specified account is following.",
+        "operationId": "list_following_api_users__user_id__following_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users that the requested account is following.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserRead" },
+                  "title": "Response List Following Api Users  User Id  Following Get"
+                }
+              }
+            }
+          },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/following/{following_id}": {
+      "delete": {
+        "tags": ["users"],
+        "summary": "Unfollow a user",
+        "description": "Delete the follow relationship between two users.",
+        "operationId": "unfollow_user_api_users__user_id__following__following_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          },
+          {
+            "name": "following_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Following Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": { "description": "Follow relationship not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/followers": {
+      "post": {
+        "tags": ["users"],
+        "summary": "Add a follower",
+        "description": "Create a follow relationship where another user follows the path user.",
+        "operationId": "add_follower_api_users__user_id__followers_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FollowerCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The follow relationship that was created.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/FollowRead" } }
+            }
+          },
+          "400": { "description": "Users cannot follow themselves." },
+          "404": { "description": "User or follower not found." },
+          "409": { "description": "Follow relationship already exists." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["users"],
+        "summary": "List followers",
+        "description": "Return users that follow the specified account.",
+        "operationId": "list_followers_api_users__user_id__followers_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users that follow the requested account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserRead" },
+                  "title": "Response List Followers Api Users  User Id  Followers Get"
+                }
+              }
+            }
+          },
+          "404": { "description": "User not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/followers/{follower_id}": {
+      "delete": {
+        "tags": ["users"],
+        "summary": "Remove a follower",
+        "description": "Delete the follow relationship where the path user is followed by another user.",
+        "operationId": "remove_follower_api_users__user_id__followers__follower_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          },
+          {
+            "name": "follower_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Follower Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": { "description": "Follow relationship not found." },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/repositories": {
+      "get": {
+        "tags": ["repositories"],
+        "summary": "List repositories (uploads)",
+        "description": "Return repositories applying optional filters.",
+        "operationId": "list_repositories_api_repositories_get",
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "description": "Filter by owner identifier.",
+              "title": "Owner Id"
+            },
+            "description": "Filter by owner identifier."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Free-text search on name/description.",
+              "title": "Q"
+            },
+            "description": "Free-text search on name/description."
+          },
+          {
+            "name": "starred_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "description": "Filter by starring user.",
+              "title": "Starred By"
+            },
+            "description": "Filter by starring user."
+          },
+          {
+            "name": "include_session",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include latest session summary.",
+              "default": false,
+              "title": "Include Session"
+            },
+            "description": "Include latest session summary."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RepositoryRead" },
+                  "title": "Response List Repositories Api Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["repositories"],
+        "summary": "Create a repository (upload)",
+        "description": "Create a new repository for the provided owner.",
+        "operationId": "create_repository_api_repositories_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/repositories": {
+      "get": {
+        "tags": ["repositories"],
+        "summary": "List a user's uploads",
+        "description": "Return repositories owned by the specified user.",
+        "operationId": "list_user_repositories_api_users__user_id__repositories_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          },
+          {
+            "name": "include_session",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include latest session summary.",
+              "default": true,
+              "title": "Include Session"
+            },
+            "description": "Include latest session summary."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RepositoryRead" },
+                  "title": "Response List User Repositories Api Users  User Id  Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/repositories/{repository_id}": {
+      "get": {
+        "tags": ["repositories"],
+        "summary": "Get repository",
+        "description": "Return a repository by identifier.",
+        "operationId": "get_repository_api_repositories__repository_id__get",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["repositories"],
+        "summary": "Update repository",
+        "description": "Update repository attributes.",
+        "operationId": "update_repository_api_repositories__repository_id__put",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryUpdate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["repositories"],
+        "summary": "Delete repository",
+        "description": "Delete a repository.",
+        "operationId": "delete_repository_api_repositories__repository_id__delete",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/repositories/{repository_id}/star": {
+      "put": {
+        "tags": ["repositories", "stars"],
+        "summary": "Star a repository",
+        "description": "Add a star association for the repository.",
+        "operationId": "star_repository_api_repositories__repository_id__star_put",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "User identifier performing the star.",
+              "title": "User Id"
+            },
+            "description": "User identifier performing the star."
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["repositories", "stars"],
+        "summary": "Unstar a repository",
+        "description": "Remove a star association for the repository.",
+        "operationId": "unstar_repository_api_repositories__repository_id__star_delete",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "User identifier undoing the star.",
+              "title": "User Id"
+            },
+            "description": "User identifier undoing the star."
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/stars": {
+      "get": {
+        "tags": ["repositories", "stars"],
+        "summary": "List starred repositories",
+        "description": "Return repositories starred by the user.",
+        "operationId": "list_user_stars_api_users__user_id__stars_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StarRead" },
+                  "title": "Response List User Stars Api Users  User Id  Stars Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": ["projects"],
+        "summary": "List projects",
+        "operationId": "list_projects_api_projects_get",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "description": "Filter by user membership",
+              "title": "Member Id"
+            },
+            "description": "Filter by user membership"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Free-text search",
+              "title": "Q"
+            },
+            "description": "Free-text search"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProjectRead" },
+                  "title": "Response List Projects Api Projects Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["projects"],
+        "summary": "Create a project",
+        "operationId": "create_project_api_projects_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProjectCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProjectRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}": {
+      "get": {
+        "tags": ["projects"],
+        "summary": "Get project",
+        "operationId": "get_project_api_projects__project_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProjectRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["projects"],
+        "summary": "Update project",
+        "operationId": "update_project_api_projects__project_id__put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProjectUpdate" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProjectRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["projects"],
+        "summary": "Delete project",
+        "operationId": "delete_project_api_projects__project_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/members": {
+      "get": {
+        "tags": ["projects"],
+        "summary": "List project members",
+        "operationId": "list_project_members_api_projects__project_id__members_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProjectMemberRead" },
+                  "title": "Response List Project Members Api Projects  Project Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["projects"],
+        "summary": "Add a project member",
+        "operationId": "add_project_member_api_projects__project_id__members_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProjectMemberCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ProjectMemberRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/members/{user_id}": {
+      "patch": {
+        "tags": ["projects"],
+        "summary": "Update member role",
+        "operationId": "update_project_member_api_projects__project_id__members__user_id__patch",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProjectMemberUpdate" } }
+          }
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["projects"],
+        "summary": "Remove a project member",
+        "operationId": "remove_project_member_api_projects__project_id__members__user_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/repositories": {
+      "get": {
+        "tags": ["projects"],
+        "summary": "List repositories in a project",
+        "operationId": "list_project_repositories_api_projects__project_id__repositories_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RepositoryRead" },
+                  "title": "Response List Project Repositories Api Projects  Project Id  Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["projects"],
+        "summary": "Attach a repository to project",
+        "operationId": "attach_repository_to_project_api_projects__project_id__repositories_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProjectRepositoryLinkCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/repositories/{repository_id}": {
+      "delete": {
+        "tags": ["projects"],
+        "summary": "Detach a repository from project",
+        "operationId": "detach_repository_from_project_api_projects__project_id__repositories__repository_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          },
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/pinned-projects": {
+      "get": {
+        "tags": ["projects", "pins"],
+        "summary": "List pinned projects",
+        "operationId": "list_pinned_projects_api_users__user_id__pinned_projects_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PinRead" },
+                  "title": "Response List Pinned Projects Api Users  User Id  Pinned Projects Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["projects", "pins"],
+        "summary": "Pin a project",
+        "operationId": "pin_project_api_users__user_id__pinned_projects_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PinCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/PinRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["projects", "pins"],
+        "summary": "Reorder pinned projects",
+        "operationId": "reorder_pins_api_users__user_id__pinned_projects_patch",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PinReorder" } }
+          }
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/pinned-projects/{project_id}": {
+      "delete": {
+        "tags": ["projects", "pins"],
+        "summary": "Unpin a project",
+        "operationId": "unpin_project_api_users__user_id__pinned_projects__project_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Project Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/datasets": {
+      "get": {
+        "tags": ["datasets"],
+        "summary": "List datasets",
+        "operationId": "list_datasets_api_datasets_get",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "Repository identifier",
+              "title": "Repository Id"
+            },
+            "description": "Repository identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DatasetRead" },
+                  "title": "Response List Datasets Api Datasets Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["datasets"],
+        "summary": "Create dataset version",
+        "operationId": "create_dataset_api_datasets_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DatasetCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/DatasetRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "get": {
+        "tags": ["datasets", "data"],
+        "summary": "List data items",
+        "operationId": "list_data_api_data_get",
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "Dataset identifier",
+              "title": "Dataset Id"
+            },
+            "description": "Dataset identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DataRead" },
+                  "title": "Response List Data Api Data Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["datasets", "data"],
+        "summary": "Create a data item",
+        "operationId": "create_data_api_data_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DataCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/DataRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/repositories/{repository_id}/sessions": {
+      "get": {
+        "tags": ["sessions"],
+        "summary": "List sessions for a repository",
+        "operationId": "list_repo_sessions_api_repositories__repository_id__sessions_get",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SessionRead" },
+                  "title": "Response List Repo Sessions Api Repositories  Repository Id  Sessions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/repositories/{repository_id}/sessions/latest": {
+      "get": {
+        "tags": ["sessions"],
+        "summary": "Get latest session for a repository",
+        "operationId": "get_latest_repo_session_api_repositories__repository_id__sessions_latest_get",
+        "parameters": [
+          {
+            "name": "repository_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Repository Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SessionRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{session_id}": {
+      "get": {
+        "tags": ["sessions"],
+        "summary": "Get session",
+        "operationId": "get_session_api_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Session Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/SessionRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{session_id}/pipeline-steps": {
+      "get": {
+        "tags": ["sessions"],
+        "summary": "List pipeline steps of a session",
+        "operationId": "list_pipeline_steps_api_sessions__session_id__pipeline_steps_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Session Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PipelineStepRead" },
+                  "title": "Response List Pipeline Steps Api Sessions  Session Id  Pipeline Steps Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{session_id}/candidates": {
+      "get": {
+        "tags": ["sessions", "candidates"],
+        "summary": "List candidates for a session",
+        "operationId": "list_candidates_api_sessions__session_id__candidates_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Session Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CandidateRead" },
+                  "title": "Response List Candidates Api Sessions  Session Id  Candidates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}": {
+      "patch": {
+        "tags": ["sessions", "candidates"],
+        "summary": "Verify/unverify a candidate",
+        "operationId": "verify_candidate_api_candidates__candidate_id__patch",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Candidate Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CandidateVerifyUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/stats": {
+      "get": {
+        "tags": ["stats"],
+        "summary": "Profile counters",
+        "operationId": "get_user_stats_api_users__user_id__stats_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/UserStatsRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/contributions": {
+      "get": {
+        "tags": ["stats"],
+        "summary": "Contribution heatmap data",
+        "operationId": "get_user_contributions_api_users__user_id__contributions_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "User Id" }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string", "format": "date" }, { "type": "null" }],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string", "format": "date" }, { "type": "null" }],
+              "title": "To"
+            }
+          },
+          {
+            "name": "include_sky_points",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean", "default": false, "title": "Include Sky Points" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ContributionRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CandidateRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id", "description": "Candidate identifier." },
+          "session_id": {
+            "type": "integer",
+            "title": "Session Id",
+            "description": "Session that produced the candidate."
+          },
+          "data": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Data",
+            "description": "Structured detection payload captured during processing."
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "Manual verification flag for the candidate."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the candidate was recorded."
+          }
+        },
+        "type": "object",
+        "required": ["id", "session_id", "is_verified", "created_at"],
+        "title": "CandidateRead"
+      },
+      "CandidateVerifyUpdate": {
+        "properties": {
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "Whether the candidate has been verified by a reviewer.",
+            "examples": [true]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["is_verified"],
+        "title": "CandidateVerifyUpdate"
+      },
+      "ContributionBucket": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date",
+            "description": "Calendar date for the bucket entry."
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of contributions recorded for the day."
+          }
+        },
+        "type": "object",
+        "required": ["date", "count"],
+        "title": "ContributionBucket"
+      },
+      "ContributionRead": {
+        "properties": {
+          "buckets": {
+            "items": { "$ref": "#/components/schemas/ContributionBucket" },
+            "type": "array",
+            "title": "Buckets",
+            "description": "Time-series contribution buckets.",
+            "examples": [[{ "count": 3, "date": "2024-01-01" }]]
+          },
+          "sky_points": {
+            "anyOf": [
+              { "items": { "$ref": "#/components/schemas/ContributionSkyPoint" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Sky Points",
+            "description": "Optional set of sky coordinates representing contributions."
+          }
+        },
+        "type": "object",
+        "required": ["buckets"],
+        "title": "ContributionRead"
+      },
+      "ContributionSkyPoint": {
+        "properties": {
+          "ra": { "type": "number", "title": "Ra", "description": "Right ascension in degrees." },
+          "dec": { "type": "number", "title": "Dec", "description": "Declination in degrees." },
+          "repository_id": {
+            "type": "integer",
+            "title": "Repository Id",
+            "description": "Repository associated with the sky point."
+          }
+        },
+        "type": "object",
+        "required": ["ra", "dec", "repository_id"],
+        "title": "ContributionSkyPoint"
+      },
+      "DataCreate": {
+        "properties": {
+          "dataset_id": {
+            "type": "integer",
+            "title": "Dataset Id",
+            "description": "Dataset identifier that the item belongs to."
+          },
+          "hash": {
+            "type": "string",
+            "title": "Hash",
+            "description": "Content hash used to deduplicate items.",
+            "examples": ["0x8aab5c9f"]
+          },
+          "fits_original_path": {
+            "type": "string",
+            "title": "Fits Original Path",
+            "description": "Path to the persisted FITS file.",
+            "examples": ["/data/uploads/HIP65211/2024-02-01/raw.fits"]
+          },
+          "fits_image_path": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Fits Image Path",
+            "description": "Optional derived image path associated with the FITS source."
+          },
+          "fits_data_json": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Fits Data Json",
+            "description": "Structured FITS metadata extracted from the file."
+          },
+          "metadata_json": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Metadata Json",
+            "description": "Arbitrary metadata describing the data item."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["dataset_id", "hash", "fits_original_path"],
+        "title": "DataCreate"
+      },
+      "DataRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "dataset_id": { "type": "integer", "title": "Dataset Id" },
+          "hash": { "type": "string", "title": "Hash" },
+          "fits_original_path": { "type": "string", "title": "Fits Original Path" },
+          "fits_image_path": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Fits Image Path",
+            "description": "Optional derived image path associated with the FITS source."
+          },
+          "fits_data_json": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Fits Data Json",
+            "description": "Structured FITS metadata extracted from the file."
+          },
+          "metadata_json": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Metadata Json",
+            "description": "Arbitrary metadata describing the data item."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Record creation timestamp."
+          },
+          "updated_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Updated At",
+            "description": "Timestamp of the most recent update, if any."
+          }
+        },
+        "type": "object",
+        "required": ["id", "dataset_id", "hash", "fits_original_path", "created_at"],
+        "title": "DataRead"
+      },
+      "DatasetCreate": {
+        "properties": {
+          "repository_id": {
+            "type": "integer",
+            "title": "Repository Id",
+            "description": "Repository that owns the dataset version."
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Monotonic dataset version within the repository.",
+            "examples": [2]
+          },
+          "captured_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Captured At",
+            "description": "Optional capture time associated with the dataset contents."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["repository_id", "version"],
+        "title": "DatasetCreate"
+      },
+      "DatasetRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "repository_id": { "type": "integer", "title": "Repository Id" },
+          "version": { "type": "integer", "title": "Version" },
+          "captured_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Captured At",
+            "description": "Capture timestamp for the dataset version."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the dataset version was created."
+          }
+        },
+        "type": "object",
+        "required": ["id", "repository_id", "version", "created_at"],
+        "title": "DatasetRead"
+      },
+      "FollowCreate": {
+        "properties": {
+          "following_id": {
+            "type": "integer",
+            "title": "Following Id",
+            "description": "Identifier of the user that the caller will follow.",
+            "examples": [42]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["following_id"],
+        "title": "FollowCreate",
+        "description": "Request payload for following another user."
+      },
+      "FollowRead": {
+        "properties": {
+          "follower_id": {
+            "type": "integer",
+            "title": "Follower Id",
+            "description": "Follower user identifier."
+          },
+          "following_id": {
+            "type": "integer",
+            "title": "Following Id",
+            "description": "User being followed."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the relationship was created."
+          }
+        },
+        "type": "object",
+        "required": ["follower_id", "following_id", "created_at"],
+        "title": "FollowRead"
+      },
+      "FollowerCreate": {
+        "properties": {
+          "follower_id": {
+            "type": "integer",
+            "title": "Follower Id",
+            "description": "Identifier of the user that will follow the path user.",
+            "examples": [7]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["follower_id"],
+        "title": "FollowerCreate",
+        "description": "Request payload for adding a follower to a user."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PinCreate": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id",
+            "description": "Project identifier to pin."
+          },
+          "position": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Position",
+            "description": "Optional slot to insert the project at."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["project_id"],
+        "title": "PinCreate"
+      },
+      "PinRead": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "User that pinned the project."
+          },
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id",
+            "description": "Pinned project identifier."
+          },
+          "position": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Position",
+            "description": "Optional explicit ordering for pinned projects."
+          },
+          "pinned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Pinned At",
+            "description": "Timestamp when the project was pinned."
+          },
+          "project": {
+            "anyOf": [{ "$ref": "#/components/schemas/ProjectRead" }, { "type": "null" }],
+            "description": "Project details when eager-loaded."
+          }
+        },
+        "type": "object",
+        "required": ["user_id", "project_id", "pinned_at"],
+        "title": "PinRead"
+      },
+      "PinReorder": {
+        "properties": {
+          "project_ids": {
+            "items": { "type": "integer" },
+            "type": "array",
+            "title": "Project Ids",
+            "description": "Ordered list of project identifiers representing the desired pin order.",
+            "examples": [[10, 5, 8]]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["project_ids"],
+        "title": "PinReorder"
+      },
+      "PipelineStepRead": {
+        "properties": {
+          "step_id": {
+            "type": "integer",
+            "title": "Step Id",
+            "description": "Unique step identifier within the run."
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id",
+            "description": "Run identifier that owns the pipeline step."
+          },
+          "step_name": {
+            "type": "string",
+            "title": "Step Name",
+            "description": "Name of the pipeline step."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Current status for the step (e.g. queued, running, done)."
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "description": "Completion percentage for the step."
+          },
+          "data": {
+            "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }],
+            "title": "Data",
+            "description": "Optional structured payload attached to the step."
+          },
+          "log": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Log",
+            "description": "Human-readable log output produced by the step."
+          },
+          "started_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Started At",
+            "description": "Timestamp when the step started."
+          },
+          "finished_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Finished At",
+            "description": "Timestamp when the step finished."
+          }
+        },
+        "type": "object",
+        "required": ["step_id", "run_id", "step_name", "status", "progress"],
+        "title": "PipelineStepRead"
+      },
+      "ProjectCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Project title displayed to collaborators.",
+            "examples": ["TESS Transit Deep Dive"]
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Optional summary describing the project's focus."
+          },
+          "start_date": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Start Date",
+            "description": "Datetime when the project became active."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name"],
+        "title": "ProjectCreate",
+        "example": {
+          "description": "Cross-mission validation for new exoplanet candidates.",
+          "name": "TESS Transit Deep Dive",
+          "start_date": "2024-02-01T00:00:00Z"
+        }
+      },
+      "ProjectMemberCreate": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "Identifier of the user joining the project."
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "Role assigned to the user within the project."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["user_id", "role"],
+        "title": "ProjectMemberCreate"
+      },
+      "ProjectMemberRead": {
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "title": "Project Id",
+            "description": "Project identifier the member belongs to."
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "Member user identifier."
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "Role assigned to the member (e.g. pm, member)."
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At",
+            "description": "Timestamp when the user joined the project."
+          },
+          "user": {
+            "anyOf": [{ "$ref": "#/components/schemas/UserRead" }, { "type": "null" }],
+            "description": "User metadata populated when eager-loaded."
+          }
+        },
+        "type": "object",
+        "required": ["project_id", "user_id", "role", "joined_at"],
+        "title": "ProjectMemberRead"
+      },
+      "ProjectMemberUpdate": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "New role to apply to the project member."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["role"],
+        "title": "ProjectMemberUpdate"
+      },
+      "ProjectRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Project title displayed to collaborators.",
+            "examples": ["TESS Transit Deep Dive"]
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Optional summary describing the project's focus."
+          },
+          "start_date": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Start Date",
+            "description": "Datetime when the project became active."
+          },
+          "id": { "type": "integer", "title": "Id" },
+          "created_at": { "type": "string", "format": "date-time", "title": "Created At" },
+          "updated_at": { "type": "string", "format": "date-time", "title": "Updated At" },
+          "members_count": {
+            "type": "integer",
+            "title": "Members Count",
+            "description": "Computed count of users participating in the project.",
+            "default": 0
+          },
+          "tags": {
+            "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }],
+            "title": "Tags",
+            "description": "List of labels associated with the project (placeholder until storage is available)."
+          }
+        },
+        "type": "object",
+        "required": ["name", "id", "created_at", "updated_at"],
+        "title": "ProjectRead"
+      },
+      "ProjectRepositoryLinkCreate": {
+        "properties": {
+          "repository_id": {
+            "type": "integer",
+            "title": "Repository Id",
+            "description": "Repository linked to the project."
+          },
+          "uploaded_by": {
+            "type": "integer",
+            "title": "Uploaded By",
+            "description": "User that performed the upload and link."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["repository_id", "uploaded_by"],
+        "title": "ProjectRepositoryLinkCreate"
+      },
+      "ProjectUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name",
+            "description": "Updated project name."
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Updated project description."
+          },
+          "start_date": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Start Date",
+            "description": "New project start datetime."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProjectUpdate"
+      },
+      "RepositoryCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-friendly repository name displayed in the UI.",
+            "examples": ["hip-65211-lightcurves"]
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Optional longer-form description of the repository contents."
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "Owner user identifier.",
+            "examples": [1]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "user_id"],
+        "title": "RepositoryCreate",
+        "example": {
+          "description": "Time-series photometry for HIP 65211.",
+          "name": "hip-65211-lightcurves",
+          "user_id": 1
+        }
+      },
+      "RepositoryRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-friendly repository name displayed in the UI.",
+            "examples": ["hip-65211-lightcurves"]
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Optional longer-form description of the repository contents."
+          },
+          "id": { "type": "integer", "title": "Id" },
+          "user_id": { "type": "integer", "title": "User Id" },
+          "created_at": { "type": "string", "format": "date-time", "title": "Created At" },
+          "updated_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Updated At",
+            "description": "Last update timestamp for the repository."
+          },
+          "starred": {
+            "type": "boolean",
+            "title": "Starred",
+            "description": "Whether the requesting user has starred this repository.",
+            "default": false
+          },
+          "session": {
+            "anyOf": [{ "$ref": "#/components/schemas/SessionSummary" }, { "type": "null" }],
+            "description": "Latest session summary when requested."
+          }
+        },
+        "type": "object",
+        "required": ["name", "id", "user_id", "created_at"],
+        "title": "RepositoryRead"
+      },
+      "RepositoryUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name",
+            "description": "New repository name. Must remain unique per user."
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description",
+            "description": "Updated description for the repository."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RepositoryUpdate"
+      },
+      "SessionRead": {
+        "properties": {
+          "id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Id",
+            "description": "Session identifier."
+          },
+          "run_id": {
+            "anyOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }],
+            "title": "Run Id",
+            "description": "Stable run identifier for the session."
+          },
+          "status": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Status",
+            "description": "Current lifecycle status (e.g. running, finished)."
+          },
+          "current_step": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Current Step",
+            "description": "Name of the pipeline step currently executing."
+          },
+          "progress": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Progress",
+            "description": "Overall completion percentage for the session."
+          },
+          "started_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Started At",
+            "description": "Timestamp when the session started."
+          },
+          "finished_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Finished At",
+            "description": "Timestamp when the session finished, if applicable."
+          },
+          "repository_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Repository Id",
+            "description": "Repository associated with the session."
+          },
+          "dataset_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Dataset Id",
+            "description": "Dataset associated with the session."
+          },
+          "data_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Data Id",
+            "description": "Data item processed by the session."
+          },
+          "data_version": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Data Version",
+            "description": "Version value tracked for the data item when the session ran."
+          }
+        },
+        "type": "object",
+        "title": "SessionRead"
+      },
+      "SessionSummary": {
+        "properties": {
+          "id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Id",
+            "description": "Session identifier."
+          },
+          "run_id": {
+            "anyOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }],
+            "title": "Run Id",
+            "description": "Stable run identifier for the session."
+          },
+          "status": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Status",
+            "description": "Current lifecycle status (e.g. running, finished)."
+          },
+          "current_step": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Current Step",
+            "description": "Name of the pipeline step currently executing."
+          },
+          "progress": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Progress",
+            "description": "Overall completion percentage for the session."
+          },
+          "started_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Started At",
+            "description": "Timestamp when the session started."
+          },
+          "finished_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Finished At",
+            "description": "Timestamp when the session finished, if applicable."
+          }
+        },
+        "type": "object",
+        "title": "SessionSummary"
+      },
+      "StarRead": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "User who starred the repository."
+          },
+          "repository_id": {
+            "type": "integer",
+            "title": "Repository Id",
+            "description": "Starred repository identifier."
+          },
+          "starred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starred At",
+            "description": "Timestamp of the starring action."
+          }
+        },
+        "type": "object",
+        "required": ["user_id", "repository_id", "starred_at"],
+        "title": "StarRead"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Unique email address used for communication and login.",
+            "examples": ["astro@example.com"]
+          },
+          "profile": {
+            "anyOf": [{ "$ref": "#/components/schemas/UserProfileCreate" }, { "type": "null" }],
+            "description": "Optional profile details to create alongside the user."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["email"],
+        "title": "UserCreate",
+        "example": {
+          "email": "astro@example.com",
+          "profile": {
+            "avatar_url": "https://cdn.example.com/avatars/alice.png",
+            "bio": "Researcher focusing on near-earth object detection."
+          }
+        }
+      },
+      "UserProfileCreate": {
+        "properties": {
+          "bio": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Bio",
+            "description": "Short biography shown on user profiles.",
+            "examples": ["Researcher focusing on near-earth object detection."]
+          },
+          "avatar_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Avatar Url",
+            "description": "Absolute URL pointing to the user's avatar image.",
+            "examples": ["https://cdn.example.com/avatars/alice.png"]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UserProfileCreate",
+        "example": {
+          "avatar_url": "https://cdn.example.com/avatars/alice.png",
+          "bio": "Researcher focusing on near-earth object detection."
+        }
+      },
+      "UserProfileRead": {
+        "properties": {
+          "bio": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Bio",
+            "description": "Short biography shown on user profiles.",
+            "examples": ["Researcher focusing on near-earth object detection."]
+          },
+          "avatar_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Avatar Url",
+            "description": "Absolute URL pointing to the user's avatar image.",
+            "examples": ["https://cdn.example.com/avatars/alice.png"]
+          },
+          "user_id": { "type": "integer", "title": "User Id" }
+        },
+        "type": "object",
+        "required": ["user_id"],
+        "title": "UserProfileRead"
+      },
+      "UserProfileUpdate": {
+        "properties": {
+          "bio": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Bio",
+            "description": "Short biography shown on user profiles.",
+            "examples": ["Researcher focusing on near-earth object detection."]
+          },
+          "avatar_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Avatar Url",
+            "description": "Absolute URL pointing to the user's avatar image.",
+            "examples": ["https://cdn.example.com/avatars/alice.png"]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UserProfileUpdate",
+        "description": "Fields that can be patched on an existing profile."
+      },
+      "UserRead": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Unique email address used for communication and login.",
+            "examples": ["astro@example.com"]
+          },
+          "id": { "type": "integer", "title": "Id" },
+          "created_at": { "type": "string", "format": "date-time", "title": "Created At" },
+          "updated_at": { "type": "string", "format": "date-time", "title": "Updated At" },
+          "profile": {
+            "anyOf": [{ "$ref": "#/components/schemas/UserProfileRead" }, { "type": "null" }],
+            "description": "Associated profile information when available."
+          }
+        },
+        "type": "object",
+        "required": ["email", "id", "created_at", "updated_at"],
+        "title": "UserRead"
+      },
+      "UserStatsRead": {
+        "properties": {
+          "projects": {
+            "type": "integer",
+            "title": "Projects",
+            "description": "Number of projects the user participates in."
+          },
+          "uploads": {
+            "type": "integer",
+            "title": "Uploads",
+            "description": "Number of repositories owned by the user."
+          },
+          "followers": {
+            "type": "integer",
+            "title": "Followers",
+            "description": "How many users follow this user."
+          },
+          "following": {
+            "type": "integer",
+            "title": "Following",
+            "description": "How many users the user follows."
+          }
+        },
+        "type": "object",
+        "required": ["projects", "uploads", "followers", "following"],
+        "title": "UserStatsRead"
+      },
+      "UserUpdate": {
+        "properties": {
+          "email": {
+            "anyOf": [{ "type": "string", "format": "email" }, { "type": "null" }],
+            "title": "Email",
+            "description": "Updated email address. Must remain unique across users."
+          },
+          "profile": {
+            "anyOf": [{ "$ref": "#/components/schemas/UserProfileUpdate" }, { "type": "null" }],
+            "description": "Profile fields to upsert for the user."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UserUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness and readiness probes used by deploy environments."
+    },
+    {
+      "name": "users",
+      "description": "Create accounts, manage profiles, and control follow relationships."
+    },
+    {
+      "name": "repositories",
+      "description": "CRUD for uploads plus search, filtering, and ownership views."
+    },
+    {
+      "name": "stars",
+      "description": "Star and unstar repositories; inspect starred collections per user."
+    },
+    {
+      "name": "projects",
+      "description": "Collaborative project registry, membership management, and linked uploads."
+    },
+    {
+      "name": "pins",
+      "description": "Pin, reorder, or remove projects showcased on user profiles."
+    },
+    {
+      "name": "datasets",
+      "description": "Versioned dataset catalogue associated with repositories."
+    },
+    {
+      "name": "data",
+      "description": "Fine-grained data artefacts contained within dataset versions."
+    },
+    {
+      "name": "sessions",
+      "description": "Processing session history and pipeline step inspection."
+    },
+    {
+      "name": "candidates",
+      "description": "Candidate detection review including verification workflow."
+    },
+    { "name": "stats", "description": "User contribution metrics, counters, and time-series data." }
+  ]
+}

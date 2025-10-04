@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import ProjectTile from '../../../src/shared/components/ProjectTile';
+import UploadTile from '../../../src/shared/components/UploadTile';
+import AboutMe from './user/profile/components/AboutMe';
 
 const Main: React.FC = () => {
   const { user, logout } = useAuth();
@@ -11,7 +14,7 @@ const Main: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 bg-slate-950 text-white">
+    <div className="overflow-scroll flex h-full flex-col items-center justify-center gap-6 bg-main-bg text-white">
       <div className="text-center">
         <h1 className="font-sans text-title20">안녕하세요, {user?.name || user?.email}님!</h1>
         <p className="mt-2 font-sans text-body16 text-white/80">
@@ -21,6 +24,11 @@ const Main: React.FC = () => {
       <div className="rounded-lg bg-white/10 px-6 py-4 text-center">
         <p className="font-sans text-body14">가입일: {user?.createdAt.slice(0, 10)}</p>
         <p className="font-sans text-body14">마지막 로그인: {user?.updatedAt.slice(0, 10)}</p>
+      </div>
+      <div className="w-[487px]">
+        <ProjectTile></ProjectTile>
+        <UploadTile></UploadTile>
+        <AboutMe></AboutMe>
       </div>
       <button
         type="button"
