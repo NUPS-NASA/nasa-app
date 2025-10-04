@@ -1,0 +1,32 @@
+{
+  "name": "@nups-nasa/client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.0",
+  "dependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.9.3",
+    "tailwindcss": "^4.1.14",
+    "vite": "^7.1.9"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
+    "postcss": "^8.5.6"
+  }
+}
