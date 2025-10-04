@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "lib": ["DOM", "ES2021"],
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@nups-nasa/ui/*": ["packages/ui/src/*"],
+      "@nups-nasa/config/*": ["packages/hooks/src/*"],
+      "@nups-nasa/utils/*": ["packages/utils/src/*"],
+      "@nups-nasa/stores/*": ["packages/stores/src/*"],
+      "@nups-nasa/types/*": ["packages/types/src/*"],
+      "@nups-nasa/dnd/*": ["packages/dnd/src/*"]
+    },
+    "strict": true,
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "ts-node": {
+    "esm": true
+  },
+  "exclude": ["node_modules", "dist"]
+}

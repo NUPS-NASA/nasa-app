@@ -1,0 +1,55 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    env_file:
+      - apps/server/.env
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      PNPM_HOME: /home/node/.local/share/pnpm
+      PNPM_STORE_PATH: /workspace/.pnpm-store
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - pnpm-node-modules:/workspace/node_modules
+      - server-node-modules:/workspace/apps/server/node_modules
+      - client-node-modules:/workspace/apps/client/node_modules
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:4000').then(res => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1));"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      PNPM_HOME: /home/node/.local/share/pnpm
+      PNPM_STORE_PATH: /workspace/.pnpm-store
+      VITE_API_BASE_URL: http://localhost:4000
+    volumes:
+      - .:/workspace
+      - pnpm-store:/workspace/.pnpm-store
+      - pnpm-node-modules:/workspace/node_modules
+      - server-node-modules:/workspace/apps/server/node_modules
+      - client-node-modules:/workspace/apps/client/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  pnpm-store:
+  pnpm-node-modules:
+  server-node-modules:
+  client-node-modules:

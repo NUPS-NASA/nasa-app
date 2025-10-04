@@ -1,0 +1,18 @@
+{
+  "name": "nasa-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "run-p dev:*",
+    "dev:server": "pnpm --filter @nups-nasa/server dev",
+    "dev:client": "pnpm --filter @nups-nasa/client dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.0",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}
