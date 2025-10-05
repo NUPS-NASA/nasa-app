@@ -2088,6 +2088,8 @@ export interface operations {
             query?: {
                 /** @description Include latest session summary. */
                 include_session?: boolean;
+                /** @description If provided, mark repositories starred by this user. */
+                starred_by?: number | null;
             };
             header?: never;
             path: {

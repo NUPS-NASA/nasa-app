@@ -43,9 +43,16 @@ export const deleteRepository = (repositoryId: number) =>
     method: 'DELETE',
   });
 
-export const listUserRepositories = (userId: number, includeSession = true) =>
+export const listUserRepositories = (
+  userId: number,
+  includeSession = true,
+  starredBy?: number | null,
+) =>
   apiClient.request<RepositoryRead[]>(`/users/${userId}/repositories`, {
-    query: { include_session: includeSession },
+    query: {
+      include_session: includeSession,
+      starred_by: starredBy ?? undefined,
+    },
   });
 
 export const starRepository = (repositoryId: number, userId: number) =>

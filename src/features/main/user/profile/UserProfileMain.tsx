@@ -82,6 +82,7 @@ const UserProfileMain = () => {
     }
 
     let active = true;
+    const viewerId = authUser?.id ?? null;
     const load = async () => {
       setIsLoading(true);
       setError(null);
@@ -98,7 +99,7 @@ const UserProfileMain = () => {
           getUserStats(userId),
           listPinnedProjects(userId),
           listProjects({ memberId: userId }),
-          listUserRepositories(userId, true),
+          listUserRepositories(userId, true, viewerId),
           getUserContributions(userId),
         ]);
 
@@ -144,7 +145,7 @@ const UserProfileMain = () => {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [authUser?.id, userId]);
 
   const navigateToSection = (segment: 'profile' | 'projects' | 'uploads' | 'likedprojects') => {
     if (!userId) {

@@ -5,12 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Uploads from './components/Uploads';
 import { ApiError } from '../../../../shared/api/client';
 import { useAuth } from '../../../auth/AuthContext';
-import {
-  listRepositories,
-  listUserRepositories,
-  starRepository,
-  unstarRepository,
-} from '../../../../shared/api/repositories';
+import { listUserRepositories, starRepository, unstarRepository } from '../../../../shared/api/repositories';
 import { useUserIdParam } from '../../../../shared/hooks/useUserIdParam';
 import type { RepositoryRead } from '../../../../shared/types';
 
@@ -29,21 +24,23 @@ const UserUploads = () => {
     }
 
     let active = true;
+    const viewerId = authUser?.id ?? null;
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [reposResponse, starredResponse] = await Promise.all([
-          listUserRepositories(userId, true),
-          listRepositories({ starredBy: userId, includeSession: true }),
-        ]);
+        const reposResponse = await listUserRepositories(userId, true, viewerId);
 
         if (!active) {
           return;
         }
 
         setRepositories(reposResponse);
-        setStarredIds(starredResponse.map(repo => repo.id));
+        if (viewerId) {
+          setStarredIds(reposResponse.filter(repo => repo.starred).map(repo => repo.id));
+        } else {
+          setStarredIds([]);
+        }
       } catch (err) {
         if (!active) {
           return;
@@ -70,7 +67,7 @@ const UserUploads = () => {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [authUser?.id, userId]);
 
   const starredSet = useMemo(() => new Set(starredIds), [starredIds]);
   const showActions = Boolean(authUser);
