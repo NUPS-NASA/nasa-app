@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import Button from '../../../shared/ui/Button';
+import Sky from './Sky'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -41,7 +42,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="bg-auth-gradient flex h-screen items-center justify-center bg-cover bg-center">
+    <div className="flex flex-col h-screen items-center justify-center bg-cover bg-center gap-[50px]">
+      <Sky />
       <div className="flex w-[408px] flex-col items-center justify-center text-white">
         <div
           style={{
@@ -133,6 +135,10 @@ const Login: React.FC = () => {
             </Button>
           </div>
         </form>
+      </div>
+      <div className="flex gap-[35px]">
+        <img src="/images/spectraintel.png" alt="Spectra Intel" className="h-[30px] w-auto" />
+        <img src="/svg/kaist.svg" alt="Spectra Intel" className="h-[30px] w-auto" />
       </div>
     </div>
   );
