@@ -363,12 +363,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
           <div className="absolute inset-0 bg-[#020921] opacity-95"></div>
           <div className="absolute inset-0 bg-[url('/images/auth-bg.jpg')] bg-cover bg-center opacity-60 mix-blend-screen"></div>
           <div className="relative z-10 flex flex-col items-center gap-8 text-center text-white">
-            <img
-              src="/images/icon_trans_512x512.png"
-              alt="Celebration"
-              className="h-32 w-32 animate-bounce"
-              onClick={event => event.stopPropagation()}
-            />
             {successQuote ? (
               <p
                 className="max-w-3xl text-title20 font-semibold leading-relaxed"
@@ -377,10 +371,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
                 {successQuote}
               </p>
             ) : null}
-            <span
-              className="text-body12 text-white/70"
-              onClick={event => event.stopPropagation()}
-            >
+            <span className="text-body12 text-white/70" onClick={event => event.stopPropagation()}>
               Tap the night sky to continue your journey
             </span>
           </div>
