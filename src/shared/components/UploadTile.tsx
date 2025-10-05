@@ -155,24 +155,18 @@ const UploadTile: FC<UploadTileProps> = ({
       {sessionHeadline || progress !== null || sessionDetails ? (
         <div className="flex flex-col gap-[6px]">
           {sessionHeadline ? (
-            <div className="flex items-center justify-between text-body12 text-gray-600">
-              <span className="truncate" title={sessionHeadline}>
+            <div className="h-[16px] flex items-center justify-end text-body12 text-gray-600">
+              <span className="truncate text-primary text-title12 w-[80px]" title={sessionHeadline}>
                 {sessionHeadline}
               </span>
-              {progress !== null ? <span>{progress}%</span> : null}
-            </div>
-          ) : null}
-          {progress !== null ? (
-            <div className="h-[6px] w-full rounded-full bg-slate-200 overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          ) : null}
-          {sessionDetails ? (
-            <div className="text-body10 text-gray-400" title={sessionDetails}>
-              <span className="truncate block">{sessionDetails}</span>
+              {progress !== null ? (
+                <div className="w-[155px] h-full rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

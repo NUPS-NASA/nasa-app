@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, CircleAlert, Loader2, MoveLeft, Trash2 } from 'lucide-react';
 
-import Button from '../../../src/shared/ui/Button';
-import { useAuth } from '../auth/AuthContext';
-import { uploadsApi } from '../../../src/shared/api';
-import type { TempUploadItem, UploadCommitRequest } from '../../../src/shared/types';
+import Button from '../../../shared/ui/Button';
+import { useAuth } from '../../auth/AuthContext';
+import { uploadsApi } from '../../../shared/api';
+import type {
+  PreprocessCategory,
+  TempPreprocessItem,
+  TempUploadItem,
+  UploadCommitRequest,
+  UploadPreprocessCommitItem,
+} from '../../../shared/types';
 
 interface UploadModalProps {
   onClose?: () => void;
@@ -46,16 +52,15 @@ const formatHeaderValue = (value: unknown): string => {
   return String(value);
 };
 
-const PREPROCESS_CATEGORIES = [
+const PREPROCESS_CATEGORIES: { key: PreprocessCategory; label: string }[] = [
   { key: 'dark', label: 'Dark' },
   { key: 'bias', label: 'Bias' },
   { key: 'flat', label: 'Flat' },
-] as const;
-
-type PreprocessCategory = (typeof PREPROCESS_CATEGORIES)[number]['key'];
+];
 
 type PreprocessFilesState = Record<PreprocessCategory, File[]>;
 type PreprocessHoverState = Record<PreprocessCategory, boolean>;
+type StagedPreprocessState = Partial<Record<PreprocessCategory, TempPreprocessItem[]>>;
 
 const createEmptyPreprocessFiles = (): PreprocessFilesState => ({
   dark: [],
@@ -69,6 +74,8 @@ const createEmptyPreprocessHover = (): PreprocessHoverState => ({
   flat: false,
 });
 
+const createEmptyStagedPreprocess = (): StagedPreprocessState => ({});
+
 const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [dragHover, setDragHover] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -78,7 +85,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [isCommitting, setIsCommitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repositoryName, setRepositoryName] = useState('');
-  const [preprocessFiles, setPreprocessFiles] = useState<PreprocessFilesState>(() => createEmptyPreprocessFiles());
+  const [preprocessFiles, setPreprocessFiles] = useState<PreprocessFilesState>(() =>
+    createEmptyPreprocessFiles(),
+  );
   const [preprocessDragHover, setPreprocessDragHover] = useState<PreprocessHoverState>(() =>
     createEmptyPreprocessHover(),
   );
@@ -133,36 +142,34 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
     fileInputRef.current?.click();
   };
 
-  const handlePreprocessDragOver = (category: PreprocessCategory) => (
-    event: React.DragEvent<HTMLDivElement>,
-  ) => {
-    event.preventDefault();
-    setPreprocessDragHover(prev => ({ ...prev, [category]: true }));
-  };
+  const handlePreprocessDragOver =
+    (category: PreprocessCategory) => (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setPreprocessDragHover(prev => ({ ...prev, [category]: true }));
+    };
 
-  const handlePreprocessDragLeave = (category: PreprocessCategory) => (
-    event: React.DragEvent<HTMLDivElement>,
-  ) => {
-    event.preventDefault();
-    setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
-  };
+  const handlePreprocessDragLeave =
+    (category: PreprocessCategory) => (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
+    };
 
-  const handlePreprocessDrop = (category: PreprocessCategory) => (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
+  const handlePreprocessDrop =
+    (category: PreprocessCategory) => (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
 
-    const files = Array.from(event.dataTransfer.files);
-    if (!files.length) return;
+      const files = Array.from(event.dataTransfer.files);
+      if (!files.length) return;
 
-    setPreprocessFiles(prev => ({ ...prev, [category]: files }));
-  };
+      setPreprocessFiles(prev => ({ ...prev, [category]: files }));
+    };
 
-  const handlePreprocessFileChange = (category: PreprocessCategory) => (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = event.target.files ? Array.from(event.target.files) : [];
-    setPreprocessFiles(prev => ({ ...prev, [category]: files }));
-  };
+  const handlePreprocessFileChange =
+    (category: PreprocessCategory) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files ? Array.from(event.target.files) : [];
+      setPreprocessFiles(prev => ({ ...prev, [category]: files }));
+    };
 
   const handlePreprocessOpenFolder = (category: PreprocessCategory) => {
     preprocessFileInputRefs.current[category]?.click();
@@ -182,7 +189,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
 
     if (!hasAnyPreprocessFiles) {
       const shouldContinue =
-        typeof window === 'undefined' ? true : window.confirm('No preprocessing files uploaded. Continue?');
+        typeof window === 'undefined'
+          ? true
+          : window.confirm('No preprocessing files uploaded. Continue?');
       if (!shouldContinue) {
         return;
       }

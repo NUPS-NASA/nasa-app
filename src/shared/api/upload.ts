@@ -1,11 +1,23 @@
 import { apiClient } from './client';
-import type { TempUploadItem, UploadCommitRequest, UploadCommitResponse } from '../types/index';
+import type {
+  PreprocessCategory,
+  StageUploadsResponse,
+  UploadCommitRequest,
+  UploadCommitResponse,
+} from '../types/index';
 
-export const stageUploads = (files: File[]) => {
+type PreprocessFileMap = Partial<Record<PreprocessCategory, File[]>>;
+
+export const stageUploads = (files: File[], preprocess?: PreprocessFileMap) => {
   const formData = new FormData();
   files.forEach(file => formData.append('files', file));
 
-  return apiClient.request<TempUploadItem[]>('/uploads/prepare', {
+  const preprocessFiles = preprocess ?? {};
+  preprocessFiles.dark?.forEach(file => formData.append('dark_files', file));
+  preprocessFiles.bias?.forEach(file => formData.append('bias_files', file));
+  preprocessFiles.flat?.forEach(file => formData.append('flat_files', file));
+
+  return apiClient.request<StageUploadsResponse>('/uploads/prepare', {
     method: 'POST',
     body: formData,
   });

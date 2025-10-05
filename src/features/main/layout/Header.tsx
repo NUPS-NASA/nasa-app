@@ -4,7 +4,7 @@ import { cn } from '../../../shared/utils';
 import Button from '../../../../src/shared/ui/Button';
 import Modal from '../../../../src/shared/ui/Modal';
 import { useState } from 'react';
-import UploadModal from '../../../../src/features/upload/UploadModal';
+import UploadModal from '../../repository/upload/UploadModal';
 
 const Header = () => {
   const { user } = useAuth();
