@@ -36,6 +36,7 @@ const App: React.FC = () => {
               <Route path="user/:userId/uploads" element={<UserUploads />} />
               <Route path="user/:userId/projects" element={<UserProjects />} />
               <Route path="user/:userId/likedprojects" element={<UserLikedProjects />} />
+              <Route path="community" element={<Community />} />
               <Route path="repo/:repoId/result" element={<ResultAnal />} />
               <Route path="proj/:projId/" element={<ProjectMain />} />
             </Route>

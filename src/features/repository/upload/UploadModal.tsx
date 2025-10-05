@@ -537,7 +537,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   }
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden flex-col py-[26px] px-[50px]">
+    <div className="flex h-[100dvh] overflow-hidden flex-col bg-auth-gradient py-[26px] px-[50px]">
       {/* Global style to hide scrollbars while keeping scroll behavior */}
       <style>{`
         /* Hide scrollbars cross-browser */
@@ -549,7 +549,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
           display: none;             /* Chrome, Safari, Opera */
         }
       `}</style>
-
       {/* Header */}
       <div className="flex items-center mb-[24px]">
         <div className="text-title20 text-white flex items-center">
@@ -584,7 +583,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
           </Button>
         </div>
       </div>
-
       {/* Main row: ensure children can shrink and scroll with min-h-0 */}
       <div className="flex flex-1 gap-[20px] min-h-0">
         {/* Sidebar (Left) */}
