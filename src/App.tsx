@@ -12,6 +12,7 @@ import UserLikedProjects from './features/main/user/profile/UserLikedProjects';
 import DashboardRedirect from './features/main/DashboardRedirect';
 import ResultAnal from './features/repository/result/ResultAnal';
 import Community from './features/community/Community';
+import ProjectMain from './features/main/project/ProjectMain';
 
 const App: React.FC = () => {
   return (
@@ -35,9 +36,9 @@ const App: React.FC = () => {
               <Route path="user/:userId/uploads" element={<UserUploads />} />
               <Route path="user/:userId/projects" element={<UserProjects />} />
               <Route path="user/:userId/likedprojects" element={<UserLikedProjects />} />
-              <Route path="community" element={<Community />} />
+              <Route path="repo/:repoId/result" element={<ResultAnal />} />
+              <Route path="proj/:projId/" element={<ProjectMain />} />
             </Route>
-            <Route path="/:repoId/result" element={<ResultAnal />} />
           </Routes>
         </HashRouter>
       </AuthProvider>

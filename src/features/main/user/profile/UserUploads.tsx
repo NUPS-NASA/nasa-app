@@ -173,7 +173,7 @@ const UserUploads = () => {
           repositories={repositories}
           columns={2}
           starredRepositoryIds={starredSet}
-          openRepo={repo => navigate(`/${repo.id}/result`)}
+          openRepo={repo => navigate(`/repo/${repo.id}/result`)}
           showActions={showActions}
           onToggleStarred={handleToggleStarred}
           emptyMessage={loading ? 'Loading uploads…' : 'No uploads found yet.'}
