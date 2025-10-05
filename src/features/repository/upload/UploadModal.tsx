@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CircleAlert, Loader2, MoveLeft, Trash2 } fro
 import Button from '../../../shared/ui/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { uploadsApi } from '../../../shared/api';
+import { cn } from '../../../shared/utils';
 import type {
   PreprocessCategory,
   TempPreprocessItem,
@@ -76,6 +77,14 @@ const createEmptyPreprocessHover = (): PreprocessHoverState => ({
 
 const createEmptyStagedPreprocess = (): StagedPreprocessState => ({});
 
+const SUCCESS_QUOTES: string[] = [
+  'Contribution confirmed. Your data is now actively driving the exoplanet search.',
+  'Telemetry received. Another clue in the hunt for distant worlds is now in play.',
+  'Upload secured. Mission control thanks you for fueling the exploration of new frontiers.',
+  'Signal locked. Together we are charting paths to unseen horizons.',
+  'Data anchors deployed. The cosmos just got a little closer thanks to you.',
+];
+
 const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [dragHover, setDragHover] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -94,6 +103,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [preprocessDragHover, setPreprocessDragHover] = useState<PreprocessHoverState>(() =>
     createEmptyPreprocessHover(),
   );
+  const [successQuote, setSuccessQuote] = useState<string | null>(null);
+  const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+  const [isSuccessFading, setIsSuccessFading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const preprocessFileInputRefs = useRef<Record<PreprocessCategory, HTMLInputElement | null>>({
@@ -309,9 +321,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
       setStagedItems([]);
       setRepositoryName('');
       setStagedPreprocess(createEmptyStagedPreprocess());
-      if (onClose) {
-        onClose();
-      }
+      setSelectedFiles([]);
+      setPreprocessFiles(createEmptyPreprocessFiles());
+      setPreprocessDragHover(createEmptyPreprocessHover());
+      setSelectedIndex(0);
+      const randomQuote = SUCCESS_QUOTES[Math.floor(Math.random() * SUCCESS_QUOTES.length)];
+      setSuccessQuote(randomQuote);
+      setIsSuccessFading(false);
+      setIsSuccessVisible(true);
     } catch (err) {
       console.error(err);
       setError('Commit failed. Please try again.');
@@ -320,8 +337,55 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
     }
   };
 
+  const handleSuccessOverlayClose = useCallback(() => {
+    if (!isSuccessVisible) return;
+    setIsSuccessFading(true);
+    setTimeout(() => {
+      setIsSuccessVisible(false);
+      setIsSuccessFading(false);
+      setSuccessQuote(null);
+      if (onClose) {
+        onClose();
+      }
+    }, 500);
+  }, [isSuccessVisible, onClose]);
+
   const renderInitialView = () => (
-    <div className="bg-auth-gradient flex h-full min-h-screen items-center justify-center bg-cover bg-center">
+    <div className="relative bg-auth-gradient flex h-full min-h-screen items-center justify-center bg-cover bg-center overflow-hidden">
+      {isSuccessVisible ? (
+        <div
+          className={cn(
+            'absolute inset-0 z-20 flex items-center justify-center px-6 transition-opacity duration-500',
+            isSuccessFading ? 'opacity-0' : 'opacity-100',
+          )}
+          onClick={handleSuccessOverlayClose}
+        >
+          <div className="absolute inset-0 bg-[#020921] opacity-95"></div>
+          <div className="absolute inset-0 bg-[url('/images/auth-bg.jpg')] bg-cover bg-center opacity-60 mix-blend-screen"></div>
+          <div className="relative z-10 flex flex-col items-center gap-8 text-center text-white">
+            <img
+              src="/images/icon_trans_512x512.png"
+              alt="Celebration"
+              className="h-32 w-32 animate-bounce"
+              onClick={event => event.stopPropagation()}
+            />
+            {successQuote ? (
+              <p
+                className="max-w-3xl text-title20 font-semibold leading-relaxed"
+                onClick={event => event.stopPropagation()}
+              >
+                {successQuote}
+              </p>
+            ) : null}
+            <span
+              className="text-body12 text-white/70"
+              onClick={event => event.stopPropagation()}
+            >
+              Tap the night sky to continue your journey
+            </span>
+          </div>
+        </div>
+      ) : null}
       <div className="flex w-[476px] flex-col items-center justify-center gap-[60px] text-white">
         <div
           style={{
