@@ -5,7 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import Uploads from './components/Uploads';
 import { ApiError } from '../../../../shared/api/client';
 import { useAuth } from '../../../auth/AuthContext';
-import { listUserRepositories, starRepository, unstarRepository } from '../../../../shared/api/repositories';
+import {
+  listUserRepositories,
+  starRepository,
+  unstarRepository,
+} from '../../../../shared/api/repositories';
 import { useUserIdParam } from '../../../../shared/hooks/useUserIdParam';
 import type { RepositoryRead } from '../../../../shared/types';
 
@@ -48,7 +52,9 @@ const UserUploads = () => {
 
         if (err instanceof ApiError) {
           const detail =
-            typeof err.body === 'object' && err.body && 'detail' in (err.body as Record<string, unknown>)
+            typeof err.body === 'object' &&
+            err.body &&
+            'detail' in (err.body as Record<string, unknown>)
               ? String((err.body as Record<string, unknown>).detail)
               : null;
           setError(detail ?? 'Failed to load uploads.');
@@ -119,7 +125,9 @@ const UserUploads = () => {
 
       if (err instanceof ApiError) {
         const detail =
-          typeof err.body === 'object' && err.body && 'detail' in (err.body as Record<string, unknown>)
+          typeof err.body === 'object' &&
+          err.body &&
+          'detail' in (err.body as Record<string, unknown>)
             ? String((err.body as Record<string, unknown>).detail)
             : null;
         setError(detail ?? 'Failed to update star status.');
@@ -165,6 +173,7 @@ const UserUploads = () => {
           repositories={repositories}
           columns={2}
           starredRepositoryIds={starredSet}
+          openRepo={id => navigate(`/${id}/result`)}
           showActions={showActions}
           onToggleStarred={handleToggleStarred}
           emptyMessage={loading ? 'Loading uploads…' : 'No uploads found yet.'}

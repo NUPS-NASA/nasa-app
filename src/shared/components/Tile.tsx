@@ -5,16 +5,20 @@ type Props = React.ButtonHTMLAttributes<HTMLDivElement> & {
   variant?: 'button' | 'card';
 };
 
-const Tile: React.FC<Props> = ({ className, children, variant = 'card' }) => {
+const Tile: React.FC<Props> = ({ className, children, variant = 'card', onClick, ...rest }) => {
   const finalClassName = cn(
-    'cursor-pointer w-full shadow-[inset_0_0_0_1px_theme(colors.slate.200)] rounded-[10px] flex bg-white p-[12px] ',
+    'cursor-pointer w-full shadow-[inset_0_0_0_1px_theme(colors.slate.200)] rounded-[10px] flex bg-white p-[12px]',
     variant === 'button'
       ? 'hover:shadow-[inset_0_0_0_1px_theme(colors.primary.DEFAULT)] active:bg-gray-200'
       : '',
     className,
   );
 
-  return <div className={finalClassName}>{children}</div>;
+  return (
+    <div className={finalClassName} onClick={onClick} {...rest}>
+      {children}
+    </div>
+  );
 };
 
 export default Tile;

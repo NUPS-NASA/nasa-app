@@ -80,6 +80,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [dragHover, setDragHover] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [stagedItems, setStagedItems] = useState<TempUploadItem[]>([]);
+  const [stagedPreprocess, setStagedPreprocess] = useState<StagedPreprocessState>(() =>
+    createEmptyStagedPreprocess(),
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isStaging, setIsStaging] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
@@ -201,8 +204,18 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
     setError(null);
 
     try {
-      const staged = await uploadsApi.stageUploads(selectedFiles);
-      setStagedItems(staged);
+      const preprocessUploadMap = (
+        Object.entries(preprocessFiles) as [PreprocessCategory, File[]][]
+      ).reduce<Partial<Record<PreprocessCategory, File[]>>>((acc, [category, files]) => {
+        if (files.length) {
+          acc[category] = files;
+        }
+        return acc;
+      }, {});
+
+      const staged = await uploadsApi.stageUploads(selectedFiles, preprocessUploadMap);
+      setStagedItems(staged.items ?? []);
+      setStagedPreprocess(staged.preprocess ?? createEmptyStagedPreprocess());
       setSelectedIndex(0);
       setSelectedFiles([]);
       setPreprocessFiles(createEmptyPreprocessFiles());
@@ -261,6 +274,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
       setError('Please provide an upload name before continuing.');
       return;
     }
+    const preprocessCommitItems = (
+      Object.entries(stagedPreprocess) as [PreprocessCategory, TempPreprocessItem[] | undefined][]
+    )
+      .flatMap(([, items]) => items ?? [])
+      .map<UploadPreprocessCommitItem>(item => ({
+        temp_id: item.temp_id,
+        category: item.category,
+        temp_path: item.temp_path,
+        original_name: item.filename,
+        metadata_json: item.metadata_json ?? null,
+      }));
 
     const payload: UploadCommitRequest = {
       user_id: authUser.id,
@@ -274,6 +298,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
         fits_data_json: item.fits_header ?? null,
         metadata_json: item.metadata_json ?? null,
       })),
+      preprocess_items: preprocessCommitItems.length ? preprocessCommitItems : null,
     };
 
     setIsCommitting(true);
@@ -283,6 +308,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
       await uploadsApi.commitUploads(payload);
       setStagedItems([]);
       setRepositoryName('');
+      setStagedPreprocess(createEmptyStagedPreprocess());
       if (onClose) {
         onClose();
       }

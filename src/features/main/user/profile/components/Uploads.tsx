@@ -10,6 +10,7 @@ interface UploadsProps {
   starredRepositoryIds?: number[] | Set<number>;
   showActions?: boolean;
   emptyMessage?: string;
+  openRepo?: (repositoryId: number) => void;
   onToggleStarred?: (repositoryId: number, nextStarred: boolean) => void;
 }
 
@@ -20,6 +21,7 @@ const Uploads: FC<UploadsProps> = ({
   showActions = false,
   emptyMessage = 'No uploads to display yet.',
   onToggleStarred,
+  openRepo,
 }) => {
   const starredIds = useMemo(() => {
     if (!starredRepositoryIds) {
@@ -41,6 +43,9 @@ const Uploads: FC<UploadsProps> = ({
       renderItem={repository => (
         <UploadTile
           key={repository.id}
+          openRepo={id => {
+            openRepo?.(id);
+          }}
           repository={repository}
           starred={starredIds.has(repository.id) || repository.starred}
           showActions={showActions}
