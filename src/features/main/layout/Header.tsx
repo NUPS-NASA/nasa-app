@@ -17,7 +17,7 @@ const Header = () => {
 
   const navigationItems: { label: string; to: string; end?: boolean }[] = [
     { label: 'Home', to: `${basePath}/profile`, end: true },
-    { label: 'Community', to: `${basePath}/projects` },
+    { label: 'Community', to: '/community' },
     { label: 'About The Team', to: `${basePath}/uploads` },
   ];
 

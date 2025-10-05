@@ -22,6 +22,7 @@ interface ProjectTileProps {
   project: ProjectRead;
   pinned?: boolean;
   showActions?: boolean;
+  size?: 'default' | 'compact';
   onTogglePinned?: (projectId: number, nextPinned: boolean) => void;
 }
 
@@ -29,11 +30,13 @@ const ProjectTile: FC<ProjectTileProps> = ({
   project,
   pinned = false,
   showActions = false,
+  size = 'default',
   onTogglePinned,
 }) => {
   const image = useMemo(() => getPlanetImage(project.id), [project.id]);
   const tags = project.tags ?? [];
   const canTogglePinned = showActions && typeof onTogglePinned === 'function';
+  const isCompact = size === 'compact';
 
   const handleTogglePinned = (event: MouseEvent<SVGSVGElement>) => {
     event.preventDefault();
@@ -47,29 +50,60 @@ const ProjectTile: FC<ProjectTileProps> = ({
   };
 
   return (
-    <Tile variant="button" className="h-[111px]">
-      <div className="w-[87px] h-[87px] mr-[12px] flex items-center justify-center">
+    <Tile
+      variant={isCompact ? 'card' : 'button'}
+      className={cn(
+        isCompact
+          ? 'cursor-default gap-4 p-4 md:flex-row md:items-center flex-col md:p-5'
+          : 'h-[111px]'
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center justify-center shrink-0 rounded-xl bg-slate-50',
+          isCompact
+            ? 'w-16 h-16 md:mr-4'
+            : 'w-[87px] h-[87px] mr-[12px]'
+        )}
+      >
         <img src={image} alt="" className="w-full h-full object-contain" />
       </div>
-      <div className="mr-[4px] flex-1 flex flex-col justify-between">
+      <div
+        className={cn(
+          'flex-1 flex flex-col justify-between w-full',
+          isCompact ? 'gap-3 text-left' : 'mr-[4px]'
+        )}
+      >
         <div className="flex flex-col">
-          <div className="text-title16 text-black h-[19px] mb-[4px]" title={project.name}>
+          <div
+            className={cn(
+              'text-black',
+              isCompact ? 'text-base font-semibold mb-1' : 'text-title16 h-[19px] mb-[4px]'
+            )}
+            title={project.name}
+          >
             {project.name}
           </div>
           {project.description ? (
-            <div className="text-body12 text-gray-500 mb-[2px]" title={project.description}>
+            <div
+              className={cn(
+                'text-gray-500',
+                isCompact ? 'text-sm leading-snug' : 'text-body12 mb-[2px]'
+              )}
+              title={project.description}
+            >
               {project.description}
             </div>
           ) : (
             <div className="text-body12 text-gray-400 mb-[2px]">No description provided.</div>
           )}
-          <div className="text-body10 text-gray-400 h-[12px]">
+          <div className={cn('text-gray-400', isCompact ? 'text-xs' : 'text-body10 h-[12px]')}>
             {project.members_count ?? 0} {project.members_count === 1 ? 'member' : 'members'}
           </div>
         </div>
         {tags.length > 0 && (
-          <div className="flex gap-[5px] flex-wrap">
-            {tags.slice(0, 3).map(tag => (
+          <div className={cn('flex flex-wrap gap-[5px]', isCompact ? 'mt-1' : '')}>
+            {tags.slice(0, isCompact ? 2 : 3).map(tag => (
               <Button key={tag} variant="tag">
                 {tag}
               </Button>

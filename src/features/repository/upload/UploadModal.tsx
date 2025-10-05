@@ -12,7 +12,6 @@ import type {
   UploadCommitRequest,
   UploadPreprocessCommitItem,
 } from '../../../shared/types';
-import Sky from '../../../features/main/auth/Sky';
 
 interface UploadModalProps {
   onClose?: () => void;
@@ -352,8 +351,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   }, [isSuccessVisible, onClose]);
 
   const renderInitialView = () => (
-    <div className="relative flex h-full min-h-screen items-center justify-center bg-cover bg-center overflow-hidden">
-      <Sky />
+    <div className="relative bg-auth-gradient flex h-full min-h-screen items-center justify-center bg-cover bg-center overflow-hidden">
       {isSuccessVisible ? (
         <div
           className={cn(
@@ -540,7 +538,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
 
   return (
     <div className="flex h-[100dvh] overflow-hidden flex-col py-[26px] px-[50px]">
-      <Sky />
       {/* Global style to hide scrollbars while keeping scroll behavior */}
       <style>{`
         /* Hide scrollbars cross-browser */
