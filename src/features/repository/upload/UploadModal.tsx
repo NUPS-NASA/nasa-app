@@ -557,21 +557,19 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
           Upload files
         </div>
 
-        <div className="ml-[233px] flex items-center text-white justify-between flex-1">
-          <div className="flex items-center">
-            <div className="text-title14 mr-[15px]">Upload Name</div>
-            <div>
-              <input
-                value={repositoryName}
-                onChange={event => setRepositoryName(event.target.value)}
-                className="rounded-md border w-[589px] text-black px-2 py-1"
-                placeholder="Name your upload"
-              />
-            </div>
+        <div className="ml-[233px] flex items-center text-white gap-[24px] flex-1">
+          <div className="flex items-center gap-[15px] flex-1">
+            <div className="text-title14">Upload Name</div>
+            <input
+              value={repositoryName}
+              onChange={event => setRepositoryName(event.target.value)}
+              className="rounded-md border text-black px-2 py-1 w-full max-w-[589px] min-w-[200px]"
+              placeholder="Name your upload"
+            />
           </div>
 
           <Button
-            className="h-[29px] w-[208px] text-body14 text-black items-center justify-center py-[4px]"
+            className="h-[29px] w-[208px] text-body14 text-black items-center justify-center py-[4px] flex-shrink-0"
             onClick={handleCommit}
             disabled={isCommitting || stagedItems.length === 0}
           >
