@@ -152,7 +152,7 @@ const PostTile: FC<PostTileProps> = ({
         <div className="flex items-start gap-4">
           {post.authorAvatarUrl && false ? (
             <img
-              src={post.authorAvatarUrl}
+              src={post.authorAvatarUrl || undefined}
               alt=""
               className="h-12 w-12 rounded-full object-cover"
             />
