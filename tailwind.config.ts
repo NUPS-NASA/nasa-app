@@ -19,6 +19,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Pretendard', 'sans-serif'],
+        'spline-mono': ['"Spline Sans Mono"', 'monospace'],
       },
       backgroundImage: {
         'auth-gradient':

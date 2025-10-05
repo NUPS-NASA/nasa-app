@@ -59,7 +59,7 @@ const Header = () => {
       </div>
       {uploadModal && (
         <Modal onClose={() => setUploadModal(false)}>
-          <UploadModal></UploadModal>
+          <UploadModal onClose={() => setUploadModal(false)} />
         </Modal>
       )}
     </header>

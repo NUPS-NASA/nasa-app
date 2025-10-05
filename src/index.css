@@ -1,4 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.bunny.net/css?family=spline-sans-mono:400,500,600,700&display=swap');
 @config '../tailwind.config.ts';
 @tailwind base;
 @tailwind components;
