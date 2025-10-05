@@ -46,6 +46,29 @@ const formatHeaderValue = (value: unknown): string => {
   return String(value);
 };
 
+const PREPROCESS_CATEGORIES = [
+  { key: 'dark', label: 'Dark' },
+  { key: 'bias', label: 'Bias' },
+  { key: 'flat', label: 'Flat' },
+] as const;
+
+type PreprocessCategory = (typeof PREPROCESS_CATEGORIES)[number]['key'];
+
+type PreprocessFilesState = Record<PreprocessCategory, File[]>;
+type PreprocessHoverState = Record<PreprocessCategory, boolean>;
+
+const createEmptyPreprocessFiles = (): PreprocessFilesState => ({
+  dark: [],
+  bias: [],
+  flat: [],
+});
+
+const createEmptyPreprocessHover = (): PreprocessHoverState => ({
+  dark: false,
+  bias: false,
+  flat: false,
+});
+
 const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [dragHover, setDragHover] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -55,8 +78,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
   const [isCommitting, setIsCommitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repositoryName, setRepositoryName] = useState('');
+  const [preprocessFiles, setPreprocessFiles] = useState<PreprocessFilesState>(() => createEmptyPreprocessFiles());
+  const [preprocessDragHover, setPreprocessDragHover] = useState<PreprocessHoverState>(() =>
+    createEmptyPreprocessHover(),
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const preprocessFileInputRefs = useRef<Record<PreprocessCategory, HTMLInputElement | null>>({
+    dark: null,
+    bias: null,
+    flat: null,
+  });
   const { user: authUser } = useAuth();
 
   useEffect(() => {
@@ -101,8 +133,60 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
     fileInputRef.current?.click();
   };
 
+  const handlePreprocessDragOver = (category: PreprocessCategory) => (
+    event: React.DragEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+    setPreprocessDragHover(prev => ({ ...prev, [category]: true }));
+  };
+
+  const handlePreprocessDragLeave = (category: PreprocessCategory) => (
+    event: React.DragEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+    setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
+  };
+
+  const handlePreprocessDrop = (category: PreprocessCategory) => (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setPreprocessDragHover(prev => ({ ...prev, [category]: false }));
+
+    const files = Array.from(event.dataTransfer.files);
+    if (!files.length) return;
+
+    setPreprocessFiles(prev => ({ ...prev, [category]: files }));
+  };
+
+  const handlePreprocessFileChange = (category: PreprocessCategory) => (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    setPreprocessFiles(prev => ({ ...prev, [category]: files }));
+  };
+
+  const handlePreprocessOpenFolder = (category: PreprocessCategory) => {
+    preprocessFileInputRefs.current[category]?.click();
+  };
+
+  const handleClearPreprocessFiles = (category: PreprocessCategory) => {
+    setPreprocessFiles(prev => ({ ...prev, [category]: [] }));
+  };
+
+  const hasAnyPreprocessFiles = useMemo(
+    () => Object.values(preprocessFiles).some(categoryFiles => categoryFiles.length > 0),
+    [preprocessFiles],
+  );
+
   const handleStageUploads = async () => {
     if (!selectedFiles.length) return;
+
+    if (!hasAnyPreprocessFiles) {
+      const shouldContinue =
+        typeof window === 'undefined' ? true : window.confirm('No preprocessing files uploaded. Continue?');
+      if (!shouldContinue) {
+        return;
+      }
+    }
 
     setIsStaging(true);
     setError(null);
@@ -112,6 +196,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
       setStagedItems(staged);
       setSelectedIndex(0);
       setSelectedFiles([]);
+      setPreprocessFiles(createEmptyPreprocessFiles());
+      setPreprocessDragHover(createEmptyPreprocessHover());
       if (!repositoryName) {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
         setRepositoryName(`Upload ${timestamp}`);
@@ -268,25 +354,88 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="flex w-full justify-between">
-          <Button className="h-[29px] w-[153px]" variant="login">
-            Calibrated files
-          </Button>
-          <Button
-            className="h-[29px] w-[153px]"
-            variant="login"
-            onClick={handleStageUploads}
-            disabled={!selectedFiles.length || isStaging}
-          >
-            {isStaging ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Uploading...
-              </span>
-            ) : (
-              'Upload'
-            )}
-          </Button>
+        <div className="flex w-full items-stretch justify-between gap-[16px]">
+          <div className="flex w-[310px] flex-col">
+            <div className="mb-[10px] text-title14">Preprocessing Files (Optional)</div>
+            <div className="grid grid-cols-3 gap-[10px]">
+              {PREPROCESS_CATEGORIES.map(category => {
+                const files = preprocessFiles[category.key];
+                const isHovering = preprocessDragHover[category.key];
+
+                return (
+                  <div key={category.key} className="flex flex-col items-center">
+                    <div className="mb-[6px] text-body12 text-white/80">{category.label}</div>
+                    <div
+                      onDragOver={handlePreprocessDragOver(category.key)}
+                      onDragLeave={handlePreprocessDragLeave(category.key)}
+                      onDrop={handlePreprocessDrop(category.key)}
+                      className={`flex h-[120px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/30 p-3 text-center text-body12 transition-colors ${
+                        isHovering ? 'bg-white/60 text-black' : 'bg-white/10'
+                      }`}
+                    >
+                      {files.length ? (
+                        <div className="flex flex-col items-center gap-2 text-body12">
+                          <div>{`${files.length} files`}</div>
+                          <button
+                            className="underline"
+                            onClick={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleClearPreprocessFiles(category.key);
+                            }}
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-body12">
+                          <div>Drag & Drop</div>
+                          <div>or</div>
+                          <button
+                            className="underline"
+                            onClick={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handlePreprocessOpenFolder(category.key);
+                            }}
+                          >
+                            Open Folders
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      ref={element => {
+                        preprocessFileInputRefs.current[category.key] = element;
+                      }}
+                      type="file"
+                      multiple
+                      onChange={handlePreprocessFileChange(category.key)}
+                      className="hidden"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-1 items-end justify-end gap-[12px]">
+            <Button
+              className="h-[29px] w-[153px]"
+              variant="login"
+              onClick={handleStageUploads}
+              disabled={!selectedFiles.length || isStaging}
+            >
+              {isStaging ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading...
+                </span>
+              ) : (
+                'Upload'
+              )}
+            </Button>
+          </div>
         </div>
         {error ? <div className="text-red-400">{error}</div> : null}
       </div>
