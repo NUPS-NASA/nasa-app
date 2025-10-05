@@ -9,7 +9,7 @@ interface UploadTileProps {
   repository: RepositoryRead;
   starred?: boolean;
   showActions?: boolean;
-  openRepo?: (repositoryId: number) => void;
+  openRepo?: (repository: RepositoryRead) => void;
   onToggleStarred?: (repositoryId: number, nextStarred: boolean) => void;
 }
 
@@ -122,7 +122,7 @@ const UploadTile: FC<UploadTileProps> = ({
     <Tile
       variant="button"
       className="flex-col gap-[12px]"
-      onClick={() => openRepo?.(repository.id)}
+      onClick={() => openRepo?.(repository)}
     >
       <div className="flex items-start justify-between gap-[12px]">
         <div className="flex flex-col gap-[4px] flex-1 min-w-0">
