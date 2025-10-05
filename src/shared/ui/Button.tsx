@@ -10,7 +10,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 // Token-driven button variants mapped to utility classes.
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   login:
-    'bg-white text-title14 text-black w-[159px] h-[35px] box-border px-[3px] hover:box-border hover:p-[3px] hover:w-[159px] hover:h-[35px] hover:border hover:border-white hover:',
+    'bg-white text-title14 text-black box-border px-[3px] hover:box-border hover:p-[3px] hover:w-[159px] hover:h-[35px] hover:border hover:border-white hover:',
   default: 'px-10 py-5 bg-white text-title14 border',
   primary:
     'bg-primary text-white text-body12 rounded-[8px] hover:border-[1px] hover:border-gray-300 hover:box-border active:bg-gray-300',

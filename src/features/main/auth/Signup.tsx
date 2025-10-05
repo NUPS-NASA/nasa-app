@@ -150,7 +150,12 @@ const Signup: React.FC = () => {
           {error && <p className="text-body12 mb-3 text-red-300">{error}</p>}
 
           <div className="flex w-full items-center justify-center">
-            <Button type="submit" variant="login" disabled={!agreeToTerms || isSubmitting}>
+            <Button
+              type="submit"
+              variant="login"
+              disabled={!agreeToTerms || isSubmitting}
+              className="w-[159px] h-[35px]"
+            >
               {isSubmitting ? 'Signing up...' : 'Sign Up'}
             </Button>
           </div>

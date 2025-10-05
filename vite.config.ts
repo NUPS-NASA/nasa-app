@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ['unperceptional-ruben-snubbingly.ngrok-free.dev'],
       proxy: {
         '/api': {
-          target: env.BACKEND_URL || 'http://localhost:8000',
+          target: env.BACKEND_URL || 'http://localhost:4000',
           changeOrigin: true,
         },
       },

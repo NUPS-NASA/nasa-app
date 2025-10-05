@@ -101,7 +101,12 @@ function buildWeeks(start: Date, end: Date, parsedData: Record<string, CalendarI
   while (cur <= end) {
     const ymd = parseDateToYmd(cur, false);
     const items = parsedData[ymd];
-    const count = items?.length || 0;
+    const count = items
+      ? items.reduce<number>((acc, item) => {
+          const value = typeof item.count === 'number' ? item.count : 1;
+          return acc + Math.max(0, value);
+        }, 0)
+      : 0;
 
     currentWeek.push({ ymd, iso: cur.toISOString(), count });
 

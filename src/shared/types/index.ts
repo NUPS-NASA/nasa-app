@@ -7,3 +7,4 @@ export * from './dataset';
 export * from './session';
 export * from './candidate';
 export * from './stats';
+export * from './upload';

@@ -123,7 +123,12 @@ const Login: React.FC = () => {
           {error && <p className="text-body12 text-red-300">{error}</p>}
 
           <div className="flex w-full items-center justify-center">
-            <Button variant="login" type="submit" disabled={isSubmitting}>
+            <Button
+              variant="login"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-[159px] h-[35px]"
+            >
               {isSubmitting ? 'Logging in...' : 'Log In'}
             </Button>
           </div>

@@ -1,18 +1,53 @@
-import UploadTile from '../../../../../../src/shared/components/UploadTile';
-import ProjectTile from '../../../../../shared/components/ProjectTile';
-import { TileList } from '../../../../../shared/components/TileList';
+import { type FC, useMemo } from 'react';
 
-interface Props {
-  colums?: number;
+import UploadTile from '../../../../../shared/components/UploadTile';
+import { TileList } from '../../../../../shared/components/TileList';
+import type { RepositoryRead } from '../../../../../shared/types';
+
+interface UploadsProps {
+  repositories: RepositoryRead[];
+  columns?: number;
+  starredRepositoryIds?: number[] | Set<number>;
+  showActions?: boolean;
+  emptyMessage?: string;
+  onToggleStarred?: (repositoryId: number, nextStarred: boolean) => void;
 }
 
-const Uploads: React.FC<Props> = ({ colums = 1 }) => {
+const Uploads: FC<UploadsProps> = ({
+  repositories,
+  columns = 1,
+  starredRepositoryIds,
+  showActions = false,
+  emptyMessage = 'No uploads to display yet.',
+  onToggleStarred,
+}) => {
+  const starredIds = useMemo(() => {
+    if (!starredRepositoryIds) {
+      return new Set<number>();
+    }
+    return new Set<number>(
+      Array.isArray(starredRepositoryIds) ? starredRepositoryIds : Array.from(starredRepositoryIds),
+    );
+  }, [starredRepositoryIds]);
+
+  if (repositories.length === 0) {
+    return <div className="text-body12 text-gray-500">{emptyMessage}</div>;
+  }
+
   return (
     <TileList
-      items={[0, 0, 0]}
-      columns={1}
-      renderItem={(item, idx) => <UploadTile key={idx}></UploadTile>}
-    ></TileList>
+      items={repositories}
+      columns={columns}
+      renderItem={repository => (
+        <UploadTile
+          key={repository.id}
+          repository={repository}
+          starred={starredIds.has(repository.id) || repository.starred}
+          showActions={showActions}
+          onToggleStarred={onToggleStarred}
+        />
+      )}
+    />
   );
 };
 
