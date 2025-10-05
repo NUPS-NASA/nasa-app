@@ -40,8 +40,8 @@ const dummySeries: LightCurveSeries[] = [
 
 const ResultAnal: React.FC = () => {
   return (
-    <div>
-      <LightCurveChart series={dummySeries}></LightCurveChart>
+    <div className="w-full flex justify-center items-start ">
+      <img src="/images/result.png" alt="" className="w-[400px]" />
     </div>
   );
 };
