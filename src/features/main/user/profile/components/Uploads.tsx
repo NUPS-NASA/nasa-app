@@ -10,7 +10,7 @@ interface UploadsProps {
   starredRepositoryIds?: number[] | Set<number>;
   showActions?: boolean;
   emptyMessage?: string;
-  openRepo?: (repositoryId: number) => void;
+  openRepo?: (repository: RepositoryRead) => void;
   onToggleStarred?: (repositoryId: number, nextStarred: boolean) => void;
 }
 
@@ -43,8 +43,8 @@ const Uploads: FC<UploadsProps> = ({
       renderItem={repository => (
         <UploadTile
           key={repository.id}
-          openRepo={id => {
-            openRepo?.(id);
+          openRepo={repo => {
+            openRepo?.(repo);
           }}
           repository={repository}
           starred={starredIds.has(repository.id) || repository.starred}
