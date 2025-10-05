@@ -1,6 +1,10 @@
 import { apiClient } from './client';
 import type {
+  AuthLoginResponse,
+  AuthTokenRefreshRequest,
+  AuthTokenRefreshResponse,
   UserCreate,
+  UserLogin,
   UserRead,
   UserUpdate,
   UserProfileRead,
@@ -37,6 +41,23 @@ export const upsertUserProfile = (userId: number, payload: UserProfileUpdate) =>
     body: payload,
   });
 
+export const loginUser = (payload: UserLogin) =>
+  apiClient.request<AuthLoginResponse>('/users/login', {
+    method: 'POST',
+    body: payload,
+    skipAuthRetry: true,
+  });
+
+export const refreshAuthTokens = (payload: AuthTokenRefreshRequest) =>
+  apiClient.request<AuthTokenRefreshResponse>('/users/refresh', {
+    method: 'POST',
+    body: payload,
+    skipAuthRetry: true,
+  });
+
+export const getCurrentUser = () =>
+  apiClient.request<UserRead>('/users/me');
+
 export const usersApi = {
   listUsers,
   createUser,
@@ -45,4 +66,7 @@ export const usersApi = {
   deleteUser,
   getUserProfile,
   upsertUserProfile,
+  loginUser,
+  refreshAuthTokens,
+  getCurrentUser,
 };

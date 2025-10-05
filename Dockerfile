@@ -22,10 +22,8 @@ COPY package.json pnpm-lock.yaml ./
 
 # Prune store (safe noop if empty) and install dependencies.
 # Force postinstall scripts (some native binaries are fetched during postinstall).
-# After install, attempt to add the ARM64 rollup native package; ignore failure if not applicable.
 RUN pnpm store prune || true \
-    && pnpm install --no-frozen-lockfile --ignore-scripts=false \
-    && pnpm add -D @rollup/rollup-linux-arm64-gnu@* || true
+    && pnpm install --frozen-lockfile=false --ignore-scripts=false
 
 # Copy rest of repository
 COPY . .

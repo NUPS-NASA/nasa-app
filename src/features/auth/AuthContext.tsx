@@ -5,12 +5,17 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from 'react';
-import { ApiError } from '../../shared/api';
-import { createUser, listUsers } from '../../shared/api/users';
-import type { UserRead } from '../../shared/types/users';
+import { ApiError, configureApiAuth } from '../../shared/api';
+import { createUser, getCurrentUser, loginUser, refreshAuthTokens } from '../../shared/api/users';
+import type {
+  AuthLoginResponse,
+  AuthTokenRefreshResponse,
+  UserRead,
+} from '../../shared/types/users';
 
 export interface AuthUser {
   id: number;
@@ -26,6 +31,17 @@ interface SignupPayload {
   password: string;
 }
 
+interface AuthTokensState {
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface AuthState {
+  user: AuthUser;
+  tokens: AuthTokensState;
+  remember: boolean;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   isReady: boolean;
@@ -36,6 +52,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const AUTH_STORAGE_KEY = 'nups-auth-state';
+
 const userFromResponse = (user: UserRead): AuthUser => ({
   id: user.id,
   email: user.email,
@@ -44,36 +62,11 @@ const userFromResponse = (user: UserRead): AuthUser => ({
   updatedAt: user.updated_at,
 });
 
-const toHex = (buffer: ArrayBuffer) =>
-  Array.from(new Uint8Array(buffer))
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join('');
-
-const hashPassword = async (password: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return toHex(digest);
-  }
-
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(password, 'utf-8').toString('base64');
-  }
-
-  return password;
-};
-
-const AUTH_STORAGE_KEY = 'nups-auth-user';
-
 const isAuthUser = (candidate: unknown): candidate is AuthUser => {
   if (!candidate || typeof candidate !== 'object') {
     return false;
   }
-
   const value = candidate as Partial<AuthUser>;
-
   return (
     typeof value.id === 'number' &&
     typeof value.email === 'string' &&
@@ -83,12 +76,33 @@ const isAuthUser = (candidate: unknown): candidate is AuthUser => {
   );
 };
 
-const readStoredUser = (): AuthUser | null => {
+const isAuthTokensState = (candidate: unknown): candidate is AuthTokensState => {
+  if (!candidate || typeof candidate !== 'object') {
+    return false;
+  }
+  const value = candidate as Partial<AuthTokensState>;
+  return typeof value.accessToken === 'string' && typeof value.refreshToken === 'string';
+};
+
+const isStoredAuthState = (candidate: unknown): candidate is AuthState => {
+  if (!candidate || typeof candidate !== 'object') {
+    return false;
+  }
+
+  const value = candidate as Partial<AuthState>;
+  return (
+    typeof value.remember === 'boolean' &&
+    isAuthUser(value.user) &&
+    isAuthTokensState(value.tokens)
+  );
+};
+
+const readStoredAuthState = (): AuthState | null => {
   if (typeof window === 'undefined') {
     return null;
   }
 
-  const storages = [window.sessionStorage, window.localStorage];
+  const storages = [window.localStorage, window.sessionStorage];
 
   for (const storage of storages) {
     const raw = storage.getItem(AUTH_STORAGE_KEY);
@@ -98,11 +112,11 @@ const readStoredUser = (): AuthUser | null => {
 
     try {
       const parsed = JSON.parse(raw);
-      if (isAuthUser(parsed)) {
+      if (isStoredAuthState(parsed)) {
         return parsed;
       }
     } catch (error) {
-      console.error('Failed to parse stored auth user', error);
+      console.error('Failed to parse stored auth state', error);
     }
 
     storage.removeItem(AUTH_STORAGE_KEY);
@@ -111,19 +125,19 @@ const readStoredUser = (): AuthUser | null => {
   return null;
 };
 
-const persistUser = (authUser: AuthUser, remember: boolean) => {
+const persistAuthState = (state: AuthState) => {
   if (typeof window === 'undefined') {
     return;
   }
 
-  const primaryStorage = remember ? window.localStorage : window.sessionStorage;
-  const secondaryStorage = remember ? window.sessionStorage : window.localStorage;
+  const primary = state.remember ? window.localStorage : window.sessionStorage;
+  const secondary = state.remember ? window.sessionStorage : window.localStorage;
 
-  primaryStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-  secondaryStorage.removeItem(AUTH_STORAGE_KEY);
+  primary.setItem(AUTH_STORAGE_KEY, JSON.stringify(state));
+  secondary.removeItem(AUTH_STORAGE_KEY);
 };
 
-const clearStoredUser = () => {
+const clearStoredAuthState = () => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -132,81 +146,180 @@ const clearStoredUser = () => {
   window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
+const buildAuthState = (
+  response: AuthLoginResponse | AuthTokenRefreshResponse,
+  remember: boolean,
+): AuthState => ({
+  user: userFromResponse(response.user),
+  tokens: {
+    accessToken: response.access_token,
+    refreshToken: response.refresh_token,
+  },
+  remember,
+});
+
 export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authState, setAuthState] = useState<AuthState | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const authStateRef = useRef<AuthState | null>(null);
+  const isRefreshingRef = useRef(false);
+  const shouldHydrateUserRef = useRef(false);
+
+  const applyAuthState = useCallback((nextState: AuthState | null) => {
+    authStateRef.current = nextState;
+    setAuthState(nextState);
+
+    if (nextState) {
+      persistAuthState(nextState);
+      return;
+    }
+
+    clearStoredAuthState();
+  }, []);
+
+  const refreshTokensHandler = useCallback(async (): Promise<boolean> => {
+    const current = authStateRef.current;
+    if (!current || !current.tokens.refreshToken) {
+      return false;
+    }
+
+    if (isRefreshingRef.current) {
+      return false;
+    }
+
+    isRefreshingRef.current = true;
+    try {
+      const response = await refreshAuthTokens({
+        refresh_token: current.tokens.refreshToken,
+      });
+      applyAuthState(buildAuthState(response, current.remember));
+      return true;
+    } catch (error) {
+      applyAuthState(null);
+      if (error instanceof ApiError && error.status === 401) {
+        return false;
+      }
+      throw error;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [applyAuthState]);
 
   useEffect(() => {
-    const storedUser = readStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
+    configureApiAuth(
+      authState
+        ? {
+            getAccessToken: () => authStateRef.current?.tokens.accessToken ?? null,
+            refreshTokens: refreshTokensHandler,
+          }
+        : null,
+    );
+  }, [authState, refreshTokensHandler]);
+
+  useEffect(() => {
+    const storedState = readStoredAuthState();
+    if (storedState) {
+      shouldHydrateUserRef.current = true;
+      applyAuthState(storedState);
     }
-
     setIsReady(true);
-  }, []);
+  }, [applyAuthState]);
 
-  const signup = useCallback(async ({ email, name, password }: SignupPayload) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const trimmedName = name.trim();
+  const login = useCallback(
+    async (email: string, password: string, remember: boolean) => {
+      const normalizedEmail = email.trim().toLowerCase();
 
-    const hashedPassword = await hashPassword(password);
+      try {
+        const response = await loginUser({
+          email: normalizedEmail,
+          password,
+        });
+        shouldHydrateUserRef.current = false;
+        applyAuthState(buildAuthState(response, remember));
+      } catch (error: unknown) {
+        if (error instanceof ApiError && error.status === 401) {
+          throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+        }
 
-    try {
-      const createdUser = await createUser({
-        email: normalizedEmail,
-        profile: {
-          bio: trimmedName || null,
-          avatar_url: hashedPassword,
-        },
-      });
+        throw new Error('로그인에 실패했습니다.');
+      }
+    },
+    [applyAuthState],
+  );
 
-      const authUser = userFromResponse(createdUser);
-      setUser(authUser);
-      persistUser(authUser, false);
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409) {
-        throw new Error('이미 등록된 이메일입니다.');
+  const signup = useCallback(
+    async ({ email, name, password }: SignupPayload) => {
+      const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = name.trim();
+
+      try {
+        await createUser({
+          email: normalizedEmail,
+          password,
+          profile: {
+            bio: trimmedName || null,
+            avatar_url: null,
+          },
+        });
+      } catch (error: unknown) {
+        if (error instanceof ApiError && error.status === 409) {
+          throw new Error('이미 등록된 이메일입니다.');
+        }
+
+        throw new Error('회원가입에 실패했습니다.');
       }
 
-      throw new Error('회원가입에 실패했습니다.');
-    }
-  }, []);
-
-  const login = useCallback(async (email: string, password: string, remember: boolean) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const hashedPassword = await hashPassword(password);
-
-    const users = await listUsers();
-    const matchingUser = users.find(candidate => candidate.email === normalizedEmail);
-
-    if (!matchingUser) {
-      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
-
-    const storedHash = matchingUser.profile?.avatar_url;
-    if (!storedHash || storedHash !== hashedPassword) {
-      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
-
-    const authUser = userFromResponse(matchingUser);
-    setUser(authUser);
-    persistUser(authUser, remember);
-  }, []);
+      await login(normalizedEmail, password, false);
+    },
+    [login],
+  );
 
   const logout = useCallback(() => {
-    setUser(null);
-    clearStoredUser();
-  }, []);
+    shouldHydrateUserRef.current = false;
+    applyAuthState(null);
+  }, [applyAuthState]);
+
+  useEffect(() => {
+    if (!authState || !shouldHydrateUserRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+    shouldHydrateUserRef.current = false;
+
+    (async () => {
+      try {
+        const user = await getCurrentUser();
+        if (isMounted && authStateRef.current) {
+          applyAuthState({
+            ...authStateRef.current,
+            user: userFromResponse(user),
+          });
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          await refreshTokensHandler();
+          return;
+        }
+
+        console.error('Failed to refresh authenticated user', error);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [applyAuthState, authState, refreshTokensHandler]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user,
+      user: authState?.user ?? null,
       isReady,
       signup,
       login,
       logout,
     }),
-    [isReady, login, logout, signup, user],
+    [authState, isReady, login, logout, signup],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

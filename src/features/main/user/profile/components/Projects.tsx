@@ -7,7 +7,7 @@ const PinnedProjects: React.FC = () => {
       <TileList
         items={[0, 0]}
         columns={1}
-        renderItem={(item, idx) => <ProjectTile></ProjectTile>}
+        renderItem={(item, idx) => <ProjectTile key={idx}></ProjectTile>}
       ></TileList>
     </>
   );

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { cn } from '../utils';
 
 type CalendarItem = {
   date: string;
@@ -46,19 +47,19 @@ export const parseItems = (items: CalendarItem[], isHm = false): Record<string, 
   return grouped;
 };
 
-const BOX_SIZE = 12;
-const GAP_X = 2;
+const BOX_SIZE = 6;
+const GAP_X = 2.36;
 const CELL_GAP_Y = 2;
 const WEEK_COL_WIDTH = BOX_SIZE + GAP_X;
 
-function boxStyleByCount(count: number): React.CSSProperties {
-  if (count < 0) return { opacity: 0, pointerEvents: 'none' };
-  if (count === 0) return { backgroundColor: '#dddddd' };
-  if (count === 1) return { backgroundColor: '#bae6fd' };
-  if (count >= 2 && count <= 5) return { backgroundColor: '#7dd3fc' };
-  if (count >= 6 && count <= 10) return { backgroundColor: '#38bdf8' };
-  if (count >= 11 && count <= 20) return { backgroundColor: '#0ea5e9' };
-  return { backgroundColor: '#0369a1' };
+function boxStyleByCount(count: number): string {
+  if (count === 0)
+    return 'bg-sky-50 shadow-[inset_0_0_0_0.5px_theme(colors.slate.300)] rounded-[1px]';
+  if (count === 1) return 'bg-sky-200 rounded-[1px]';
+  if (count === 2) return 'bg-sky-500 rounded-[1px]';
+  if (count >= 3 && count <= 5) return 'bg-sky-800';
+  if (count >= 6 && count <= 10) return 'bg-sky-950';
+  return 'bg-transparent';
 }
 
 function useCalendarRange(selectedYear?: number) {
@@ -185,73 +186,88 @@ export default function ContributionCalendar({ items = [], selectedYear, onBoxCl
   const monthSegments = useMemo(() => buildMonthSegments(weeks), [weeks]);
 
   return (
-    <div id="calendar" className="w-full flex">
-      <div className="mr-[10px] mt-[22px]">
-        {['Mon', 'Wed', 'Fri'].map(label => (
-          <div key={label} className="mt-[10px] text-sm">
-            {label}
+    <div id="calendar">
+      <div className="w-full flex">
+        <div className="mr-[10px] mt-[14px]">
+          {['Mon', 'Wed', 'Fri'].map(label => (
+            <div key={label} className="mt-[5px] h-[12px] text-body10">
+              {label}
+            </div>
+          ))}
+        </div>
+
+        <div className="w-full overflow-x-auto">
+          <div className="flex text-body10 flex-shrink-0" aria-hidden>
+            {monthSegments.map((seg, i) => (
+              <div
+                key={`${seg.label}-${i}`}
+                className="flex-none text-center"
+                style={{ minWidth: `${WEEK_COL_WIDTH * 4}px` }}
+              >
+                {seg.label}
+              </div>
+            ))}
           </div>
-        ))}
+
+          <div className="flex">
+            {weeks.map((week, wIdx) => (
+              <div key={wIdx} className="flex flex-col mr-[2px]">
+                {week.map((cell, cIdx) => {
+                  const { count, ymd } = cell;
+                  const clickable = count > 0 && !!ymd;
+
+                  const title =
+                    count > 0 && ymd
+                      ? `${ymd} has a total of ${count} items.`
+                      : count === 0 && ymd
+                      ? `There is no activity on ${ymd}.`
+                      : '';
+
+                  const commonProps = {
+                    title,
+                    className: cn(
+                      clickable ? 'cursor-pointer' : 'cursor-default',
+                      boxStyleByCount(count),
+                    ),
+                    style: {
+                      width: `${BOX_SIZE}px`,
+                      height: `${BOX_SIZE}px`,
+                      marginBottom: `${CELL_GAP_Y}px`,
+                      marginRight: `${0.6}px`,
+                    },
+                  } as const;
+
+                  if (clickable && ymd) {
+                    return (
+                      <div
+                        key={`${wIdx}-${cIdx}`}
+                        {...commonProps}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onBoxClick?.(ymd)}
+                        onKeyDown={e => {
+                          if ((e.key === 'Enter' || e.key === ' ') && onBoxClick) onBoxClick(ymd);
+                        }}
+                      />
+                    );
+                  }
+
+                  return <div key={`${wIdx}-${cIdx}`} {...commonProps} />;
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="w-full overflow-x-auto">
-        <div className="flex text-sm flex-shrink-0" aria-hidden>
-          {monthSegments.map((seg, i) => (
-            <div
-              key={`${seg.label}-${i}`}
-              className="flex-none"
-              style={{ minWidth: `${WEEK_COL_WIDTH * seg.weeks}px` }}
-            >
-              {seg.label}
-            </div>
+      <div className="flex text-body10 h-[12px] flex-shrink-0 w-full justify-end">
+        <div className="text-body10 mr-[7px]">Less</div>
+        <div className="flex gap-[5px] h-full items-center justify-center">
+          {[1, 2, 3, 6].map(num => (
+            <div className={cn(boxStyleByCount(num), 'w-[6px] h-[6px]')} key={num}></div>
           ))}
         </div>
-
-        <div className="flex">
-          {weeks.map((week, wIdx) => (
-            <div key={wIdx} className="flex flex-col mr-[2px]">
-              {week.map((cell, cIdx) => {
-                const { count, ymd } = cell;
-                const clickable = count > 0 && !!ymd;
-
-                const title =
-                  count > 0 && ymd
-                    ? `${ymd} has a total of ${count} items.`
-                    : count === 0 && ymd
-                    ? `There is no activity on ${ymd}.`
-                    : '';
-
-                const commonProps = {
-                  title,
-                  className: clickable ? 'cursor-pointer' : 'cursor-default',
-                  style: {
-                    ...boxStyleByCount(count),
-                    width: `${BOX_SIZE}px`,
-                    height: `${BOX_SIZE}px`,
-                    marginBottom: `${CELL_GAP_Y}px`,
-                  },
-                } as const;
-
-                if (clickable && ymd) {
-                  return (
-                    <div
-                      key={`${wIdx}-${cIdx}`}
-                      {...commonProps}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onBoxClick?.(ymd)}
-                      onKeyDown={e => {
-                        if ((e.key === 'Enter' || e.key === ' ') && onBoxClick) onBoxClick(ymd);
-                      }}
-                    />
-                  );
-                }
-
-                return <div key={`${wIdx}-${cIdx}`} {...commonProps} />;
-              })}
-            </div>
-          ))}
-        </div>
+        <div className="text-body10 ml-[7px]">Less</div>
       </div>
     </div>
   );

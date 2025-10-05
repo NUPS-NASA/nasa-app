@@ -34,6 +34,7 @@ const config: Config = {
         body14: ['14px', { lineHeight: '20px', fontWeight: '400' }],
         body12: ['12px', { lineHeight: '16px', fontWeight: '400' }],
         body10: ['10px', { lineHeight: '14px', fontWeight: '400' }],
+        body8: ['8px', { lineHeight: '12px', fontWeight: '400' }],
       },
     },
   },

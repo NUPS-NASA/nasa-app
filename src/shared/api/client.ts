@@ -7,7 +7,19 @@ export interface RequestOptions extends Omit<RequestInit, 'body' | 'headers'> {
   body?: unknown;
   headers?: Record<string, string>;
   query?: Record<string, string | number | boolean | null | undefined>;
+  skipAuthRetry?: boolean;
 }
+
+interface AuthHandlers {
+  getAccessToken: () => string | null;
+  refreshTokens: () => Promise<boolean>;
+}
+
+let authHandlers: AuthHandlers | null = null;
+
+export const configureApiAuth = (handlers: AuthHandlers | null) => {
+  authHandlers = handlers;
+};
 
 export class ApiError<T = unknown> extends Error {
   status: number;
@@ -39,7 +51,7 @@ export class ApiClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { body, query, headers = {}, ...rest } = options;
+    const { body, query, headers = {}, skipAuthRetry = false, ...rest } = options;
     let url = this.baseUrl + (path.startsWith('/') ? path : `/${path}`);
 
     if (query) {
@@ -57,18 +69,48 @@ export class ApiClient {
       }
     }
 
-    const headerBag: Record<string, string> = { ...headers };
-    if (!(body instanceof FormData) && body !== undefined && !headerBag['Content-Type']) {
-      headerBag['Content-Type'] = 'application/json';
+    const baseHeaders: Record<string, string> = { ...headers };
+    if (!(body instanceof FormData) && body !== undefined && !baseHeaders['Content-Type']) {
+      baseHeaders['Content-Type'] = 'application/json';
     }
 
-    const init: RequestInit = {
-      ...rest,
-      headers: headerBag,
-      body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
+    const resolvedBody =
+      body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined;
+
+    const performFetch = async () => {
+      const headersWithAuth: Record<string, string> = { ...baseHeaders };
+
+      if (authHandlers?.getAccessToken) {
+        const token = authHandlers.getAccessToken();
+        if (token) {
+          headersWithAuth['Authorization'] = `Bearer ${token}`;
+        } else {
+          delete headersWithAuth['Authorization'];
+        }
+      }
+
+      const init: RequestInit = {
+        ...rest,
+        headers: headersWithAuth,
+        body: resolvedBody,
+      };
+
+      return this.fetchImpl(url, init);
     };
 
-    const response = await this.fetchImpl(url, init);
+    let response = await performFetch();
+
+    if (!skipAuthRetry && response.status === 401 && authHandlers?.refreshTokens) {
+      try {
+        const refreshed = await authHandlers.refreshTokens();
+        if (refreshed) {
+          response = await performFetch();
+        }
+      } catch (error) {
+        // Refresh attempts bubble up to the caller.
+        throw error;
+      }
+    }
 
     if (!response.ok) {
       let errorBody: unknown = null;

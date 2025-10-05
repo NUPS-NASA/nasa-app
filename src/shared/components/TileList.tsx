@@ -8,7 +8,7 @@ interface TileListProps<T> {
 
 export function TileList<T>({
   items,
-  gapX = 8,
+  gapX = 10,
   gapY = 8,
   columns = 1,
   renderItem,

@@ -11,7 +11,7 @@ const Uploads: React.FC<Props> = ({ colums = 1 }) => {
     <TileList
       items={[0, 0, 0]}
       columns={1}
-      renderItem={(item, idx) => <UploadTile></UploadTile>}
+      renderItem={(item, idx) => <UploadTile key={idx}></UploadTile>}
     ></TileList>
   );
 };
