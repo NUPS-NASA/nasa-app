@@ -1,0 +1,7 @@
+name = "nups-nasa"
+main = "src/worker.ts"
+compatibility_date = "2023-01-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
