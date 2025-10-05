@@ -233,7 +233,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose }) => {
       setPreprocessFiles(createEmptyPreprocessFiles());
       setPreprocessDragHover(createEmptyPreprocessHover());
       if (!repositoryName) {
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+        const isoTimestamp = new Date().toISOString().slice(0, 19);
+        const timestamp = isoTimestamp.replaceAll('-', '').replaceAll(':', '').replace('T', '');
         setRepositoryName(`Upload ${timestamp}`);
       }
     } catch (err) {

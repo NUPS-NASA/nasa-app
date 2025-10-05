@@ -1,5 +1,5 @@
 import { type FC, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Heart, MessageCircle, Send } from 'lucide-react';
+import { ChevronDown, ChevronUp, Heart, MessageCircle, Send, Trash2 } from 'lucide-react';
 
 import type { Post } from '../types/post';
 import Button from '../ui/Button';
@@ -9,12 +9,25 @@ import ProjectTile from './ProjectTile';
 interface PostTileProps {
   post: Post;
   onToggleLiked?: (postId: number, nextLiked: boolean) => void;
-  onAddComment?: (postId: number, commentContent: string) => void;
+  onAddComment?: (postId: number, commentContent: string) => void | Promise<void>;
+  onDeletePost?: (postId: number) => void | Promise<void>;
+  onDeleteComment?: (postId: number, commentId: number) => void | Promise<void>;
+  currentUserId?: number;
 }
 
-const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
+const PostTile: FC<PostTileProps> = ({
+  post,
+  onToggleLiked,
+  onAddComment,
+  onDeletePost,
+  onDeleteComment,
+  currentUserId,
+}) => {
   const [commentContent, setCommentContent] = useState('');
   const [showComments, setShowComments] = useState(post.comments.length > 0);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
+  const [deletingCommentIds, setDeletingCommentIds] = useState<Set<number>>(() => new Set());
 
   const formattedDate = useMemo(() => {
     try {
@@ -27,6 +40,23 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
       return post.createdAt;
     }
   }, [post.createdAt]);
+
+  const escapeHtml = (value: string) =>
+    value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  const contentHtml = useMemo(() => {
+    if (!post.content) {
+      return '';
+    }
+
+    const containsHtmlTag = /<[^>]+>/i.test(post.content);
+
+    if (containsHtmlTag) {
+      return post.content;
+    }
+
+    return escapeHtml(post.content).replace(/\n/g, '<br />');
+  }, [post.content]);
 
   const categoryLabelMap: Record<Post['category'], string> = {
     announcements: 'Announcements',
@@ -43,24 +73,94 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
     onToggleLiked?.(post.id, !post.liked);
   };
 
-  const handleAddComment = () => {
+  const submitComment = async () => {
     const content = commentContent.trim();
-    if (!content) {
+    if (!content || !onAddComment) {
       return;
     }
 
-    onAddComment?.(post.id, content);
-    setCommentContent('');
-    setShowComments(true);
+    setIsSubmittingComment(true);
+    try {
+      await Promise.resolve(onAddComment(post.id, content));
+      setCommentContent('');
+      setShowComments(true);
+    } catch (error) {
+      console.error('Failed to add comment', error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!post.canDelete || !onDeletePost) {
+      return;
+    }
+
+    const confirmed = window.confirm('게시글을 삭제하시겠어요? 삭제 후에는 되돌릴 수 없습니다.');
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeletingPost(true);
+    try {
+      await Promise.resolve(onDeletePost(post.id));
+    } catch (error) {
+      console.error('Failed to delete post', error);
+      window.alert('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsDeletingPost(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!onDeleteComment) {
+      return;
+    }
+
+    const confirmed = window.confirm('이 댓글을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.');
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingCommentIds(prev => {
+      const next = new Set(prev);
+      next.add(commentId);
+      return next;
+    });
+
+    try {
+      await Promise.resolve(onDeleteComment(post.id, commentId));
+      setDeletingCommentIds(prev => {
+        const next = new Set(prev);
+        next.delete(commentId);
+        return next;
+      });
+    } catch (error) {
+      console.error('Failed to delete comment', error);
+      window.alert('댓글 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      setDeletingCommentIds(prev => {
+        const next = new Set(prev);
+        next.delete(commentId);
+        return next;
+      });
+    }
   };
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <header className="flex flex-wrap items-start justify-between gap-4 px-6 py-5">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold uppercase text-primary">
-            {post.author.slice(0, 2).toUpperCase()}
-          </div>
+          {post.authorAvatarUrl && false ? (
+            <img
+              src={post.authorAvatarUrl}
+              alt=""
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold uppercase text-primary">
+              {post.author.slice(0, 2).toUpperCase()}
+            </div>
+          )}
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold text-slate-900">{post.author}</p>
@@ -75,6 +175,17 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {post.canDelete ? (
+            <button
+              type="button"
+              onClick={handleDeletePost}
+              className="flex items-center gap-2 rounded-full border border-transparent bg-slate-50 px-4 py-2 text-sm font-medium text-red-500 transition hover:border-red-200 hover:bg-red-50"
+              disabled={isDeletingPost}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>{isDeletingPost ? '삭제 중...' : '삭제'}</span>
+            </button>
+          ) : null}
           <button
             onClick={handleToggleLiked}
             className={cn(
@@ -105,9 +216,9 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
         </div>
       </header>
 
-      <section className="px-6 pb-5 text-base leading-relaxed text-slate-700 whitespace-pre-line">
+      <section className="px-6 pb-5 text-base leading-relaxed text-slate-700">
         <h3 className="mb-3 text-xl font-semibold text-slate-900">{post.title}</h3>
-        {post.content}
+        <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
       </section>
 
       {post.linkedProject ? (
@@ -135,12 +246,27 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
                   <p className="font-semibold text-slate-800">{comment.author}</p>
                   <span className="text-slate-300">•</span>
                   <p className="text-slate-700">{comment.content}</p>
-                  <time
-                    className="ml-auto text-xs text-slate-500"
-                    dateTime={comment.createdAt}
-                  >
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </time>
+                  <div className="ml-auto flex items-center gap-3">
+                    <time
+                      className="text-xs text-slate-500"
+                      dateTime={comment.createdAt}
+                    >
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </time>
+                    {currentUserId && comment.authorId === currentUserId && onDeleteComment ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteComment(comment.id)}
+                        className="flex items-center gap-1 text-xs font-medium text-red-500 transition hover:text-red-600 disabled:opacity-60"
+                        disabled={deletingCommentIds.has(comment.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>
+                          {deletingCommentIds.has(comment.id) ? '삭제 중...' : '삭제'}
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ))
             ) : (
@@ -151,40 +277,47 @@ const PostTile: FC<PostTileProps> = ({ post, onToggleLiked, onAddComment }) => {
           </div>
         )}
 
-        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <label htmlFor={`post-${post.id}-comment-input`} className="sr-only">
-            Add a comment
-          </label>
-          <textarea
-            id={`post-${post.id}-comment-input`}
-            rows={3}
-            value={commentContent}
-            onChange={event => setCommentContent(event.target.value)}
-            placeholder="Share your feedback or ask a question..."
-            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            onKeyDown={event => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                event.preventDefault();
-                handleAddComment();
-              }
-            }}
-          />
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <p className="text-xs text-slate-500">
-              Press <span className="font-medium">Ctrl/⌘ + Enter</span> to post
-            </p>
-            <Button
-              variant="primary"
-              className="flex items-center gap-2 px-4 py-2"
-              onClick={handleAddComment}
-              disabled={!commentContent.trim()}
-              type="button"
-            >
-              <Send className="h-4 w-4" />
-              <span>Post comment</span>
-            </Button>
+        {currentUserId ? (
+          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <label htmlFor={`post-${post.id}-comment-input`} className="sr-only">
+              Add a comment
+            </label>
+            <textarea
+              id={`post-${post.id}-comment-input`}
+              rows={3}
+              value={commentContent}
+              onChange={event => setCommentContent(event.target.value)}
+              placeholder="Share your feedback or ask a question..."
+              className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              onKeyDown={event => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                  event.preventDefault();
+                  void submitComment();
+                }
+              }}
+              disabled={isSubmittingComment}
+            />
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <p className="text-xs text-slate-500">
+                Press <span className="font-medium">Ctrl/⌘ + Enter</span> to post
+              </p>
+              <Button
+                variant="primary"
+                className="flex items-center gap-2 px-4 py-2"
+                onClick={() => void submitComment()}
+                disabled={isSubmittingComment || !commentContent.trim()}
+                type="button"
+              >
+                <Send className="h-4 w-4" />
+                <span>{isSubmittingComment ? 'Posting...' : 'Post comment'}</span>
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+            로그인 후 댓글을 남길 수 있습니다.
+          </div>
+        )}
       </section>
     </article>
   );
